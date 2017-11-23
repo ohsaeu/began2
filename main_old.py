@@ -27,17 +27,15 @@ def main():
 
     # execute generator
     g_net, g_vars = generate(z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel,  is_train=True, reuse=False)
-    g_img=tf.clip_by_value((g_net + 1)*127.5, 0, 255)
+    g_img=g_net
     #g_img= tf.clip_by_value((g_net + 1)*127.5, 0, 255)
 
     # execute discriminator
     e_g_net, e_vars = encode(g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=True, reuse=False)
-    d_g_net, d_vars = decode(e_g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=True, reuse=False)
-    d_g_img=tf.clip_by_value((d_g_net + 1)*127.5, 0, 255)
+    d_g_img, d_vars = decode(e_g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=True, reuse=False)
+    #d_g_img = tf.clip_by_value((d_g_net + 1)*127.5, 0, 255)
     e_x_net, _ = encode(x_img, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=True, reuse=True)
-    d_x_net, _ = decode(e_x_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=True, reuse=True)
-    d_x_img=tf.clip_by_value((d_x_net + 1)*127.5, 0, 255)
-    
+    d_x_img, _ = decode(e_x_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=True, reuse=True)
     #d_x_img = tf.clip_by_value((d_x_net + 1)*127.5, 0, 255)
     #d_loss_g = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=net_d_g, labels=tf.zeros_like(net_d_g)),name='d_loss_fake')
     #d_loss_x = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=net_d_x, labels=tf.ones_like(net_d_x)),name='d_loss_real')
@@ -135,7 +133,7 @@ def main():
             f_batch = data_files[idx*conf.n_batch:(idx+1)*conf.n_batch]
             data_batch = [get_image(f, conf.n_img_pix, is_crop=conf.is_crop, resize_w=conf.n_img_out_pix, is_grayscale = conf.is_gray) for f in f_batch]
             img_batch = np.array(data_batch).astype(np.float32)
-            img_batch = img_batch/127.5 - 1.
+            img_batch = img_batch/255#127.5 - 1.
 
             if conf.is_gray :
                 s,h,w = img_batch.shape
