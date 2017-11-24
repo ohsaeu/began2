@@ -4,7 +4,7 @@ import tensorflow as tf
 from glob import glob
 from random import shuffle
 from model import generate, encode, decode
-from utils import save_images, save_npz, get_image
+from utils import save_images, save_image, save_npz, get_image
 from config import get_config
 pp = pprint.PrettyPrinter()
 
@@ -178,9 +178,13 @@ def main():
                 g_sample = sess.run(g_img, feed_dict={z: z_fix})
                 g_ae, x_ae = sess.run([d_g_img,d_x_img] ,feed_dict={g_net:g_sample,x_net: x_fix})
 
-                save_images(g_sample,[n_grid_row,n_grid_row], os.path.join(checkpoint_dir, '{}_G.png'.format(n_step)))
-                save_images(g_ae, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir,  '{}_AE_G.png'.format(n_step)))
-                save_images(x_ae, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, '{}_AE_X.png'.format(n_step)))
+                save_image(g_sample,os.path.join(checkpoint_dir, '{}_G.png'.format(n_step)))
+                save_image(g_ae, os.path.join(checkpoint_dir,  '{}_AE_G.png'.format(n_step)))
+                save_image(x_ae, os.path.join(checkpoint_dir, '{}_AE_X.png'.format(n_step)))
+                
+                #save_images(g_sample,[n_grid_row,n_grid_row], os.path.join(checkpoint_dir, '{}_G.png'.format(n_step)))
+                #save_images(g_ae, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir,  '{}_AE_G.png'.format(n_step)))
+                #save_images(x_ae, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, '{}_AE_X.png'.format(n_step)))
                 save_npz(g_vars, name=net_g_name, sess=sess)
                 save_npz(e_vars, name=net_e_name, sess=sess)
                 save_npz(d_vars, name=net_d_name, sess=sess)
