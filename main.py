@@ -175,8 +175,8 @@ def main():
 
 
             if n_step % conf.n_save_img_step == 0:
-                g_sample = sess.run(g_img, feed_dict={z: z_fix})
-                g_ae, x_ae = sess.run([d_g_img,d_x_img] ,feed_dict={g_net:g_sample,x_net: x_fix})
+                #g_sample = sess.run(g_img, feed_dict={z: z_fix})
+                g_sample, g_ae, x_ae = sess.run([g_img, d_g_img,d_x_img] ,feed_dict={x_net: x_fix})
 
                 save_image(g_sample,os.path.join(checkpoint_dir, '{}_G.png'.format(n_step)))
                 save_image(g_ae, os.path.join(checkpoint_dir,  '{}_AE_G.png'.format(n_step)))
