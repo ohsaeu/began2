@@ -28,6 +28,8 @@ def main():
     e_net,_ = encode(g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=False, reuse=False)
     d_net,_ = decode(e_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel,is_train=False, reuse=False)
    
+    g_img=tf.clip_by_value((g_net + 1)*127.5, 0, 255)
+    d_img=tf.clip_by_value((d_net + 1)*127.5, 0, 255)
     # start session
     sess = tf.InteractiveSession()
     init = tf.global_variables_initializer()
@@ -39,7 +41,7 @@ def main():
         os.makedirs(checkpoint_dir)
 
     # load and fetch variables
-    npz_path ='C:/samples/img_download/wheels/wheeldesign/output/began2/17-11-20-08-19/'
+    npz_path ='C:/samples/img_download/wheels/wheeldesign/output/began2/17-11-14-11/'
     
     g_params = np.load( npz_path+'net_g.npz' )['params']
     d_params = np.load( npz_path+'net_d.npz' )['params']
@@ -48,7 +50,7 @@ def main():
     saver = tf.train.import_meta_graph(npz_path+'began2_model.ckpt.meta')
     saver.restore(sess, tf.train.latest_checkpoint(npz_path))
     
-    col = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+    #col = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
     
     g_idx=0
     e_idx=0
@@ -57,14 +59,7 @@ def main():
         
         key = x.name.split(':')[0]
         scope = key.split('/')
-        with tf.variable_scope(scope[0]) as vs1:
-            vs1.reuse_variables()
-            with tf.variable_scope(scope[1]) as vs2:
-                vs2.reuse_variables()
-                ref =tf.get_variable(scope[2], shape=x.shape) 
-                ref1=tf.assign(ref,x)
-                sess.run(ref1)
-        '''
+        
         with tf.variable_scope(scope[0]) as vs1:
             vs1.reuse_variables()
             with tf.variable_scope(scope[1]) as vs2:
@@ -82,7 +77,7 @@ def main():
                     ref1=tf.assign(ref,d_params[d_idx])
                     sess.run(ref1)
                     d_idx+=1
-        '''            
+                    
 
     #z2 = tf.random_uniform((conf.n_batch, conf.n_img_out_pix,conf.n_img_out_pix,n_channel), minval=-1.0, maxval=1.0)
     z_fix =np.random.uniform(low=-1, high=1, size=(conf.n_batch, 64)).astype(np.float32)
@@ -98,14 +93,16 @@ def main():
         x_fix = x_fix.reshape(s,h, w,n_channel )    
     
     # run ae        
-    x_img =sess.run(d_net,feed_dict={g_net:x_fix})  
-    x_img= x_img*255
-    z_img =sess.run(d_net,feed_dict={e_net:z_fix})  
-    z_img= z_img*255
+    x_im =sess.run(d_img,feed_dict={g_net:x_fix})  
+    #x_img= x_img*255
+    g_im =sess.run(g_img,feed_dict={z:z_fix})
+    z_im =sess.run(d_img,feed_dict={e_net:z_fix})  
+    #z_img= z_img*255
     
     # save image
-    save_images(x_img, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_AE_X.png'))
-    save_images(z_img, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_AE_Z.png'))
+    save_images(x_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_AE_X.png'))
+    save_images(g_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_AE_G.png'))
+    save_images(z_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_AE_Z.png'))
       
     sess.close()
 
