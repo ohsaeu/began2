@@ -21,21 +21,25 @@ def main():
     n_grid_row = int(np.sqrt(conf.n_batch))
     ##========================= DEFINE MODEL ===========================##
     z = tf.random_uniform(
-                (conf.n_batch, conf.n_z), minval=0.0, maxval=1.0)
-    x_img =  tf.placeholder(tf.float32, [conf.n_batch, conf.n_img_pix, conf.n_img_pix, n_channel], name='real_images')
+                (conf.n_batch, conf.n_z), minval=-1.0, maxval=1.0)
+    x_net =  tf.placeholder(tf.float32, [conf.n_batch, conf.n_img_pix, conf.n_img_pix, n_channel], name='real_images')
     k_t = tf.Variable(0., trainable=False, name='k_t')
 
     # execute generator
     g_net, g_vars = generate(z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel,  is_train=True, reuse=False)
-    g_img=tf.clip_by_value((g_net + 1)*127.5, 0, 255)
-    
+        
     # execute discriminator
     e_g_net, e_vars = encode(g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=True, reuse=False)
     d_g_net, d_vars = decode(e_g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=True, reuse=False)
-    d_g_img=tf.clip_by_value((d_g_net + 1)*127.5, 0, 255)
-    e_x_net, _ = encode(x_img, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=True, reuse=True)
+    
+    e_x_net, _ = encode(x_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=True, reuse=True)
     d_x_net, _ = decode(e_x_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=True, reuse=True)
+    
+    g_img=tf.clip_by_value((g_net + 1)*127.5, 0, 255)
+    #x_img=tf.clip_by_value((x_net + 1)*127.5, 0, 255)
+    d_g_img=tf.clip_by_value((d_g_net + 1)*127.5, 0, 255)
     d_x_img=tf.clip_by_value((d_x_net + 1)*127.5, 0, 255)
+    
     
     #d_x_img = tf.clip_by_value((d_x_net + 1)*127.5, 0, 255)
     #d_loss_g = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=net_d_g, labels=tf.zeros_like(net_d_g)),name='d_loss_fake')
@@ -43,11 +47,11 @@ def main():
     #d_loss = d_loss_g + d_loss_x
     #g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=net_g, labels=tf.ones_like(net_g)),name='g_loss')
 
-    d_loss_g = tf.reduce_mean(tf.abs(d_g_img - g_img))
-    d_loss_x = tf.reduce_mean(tf.abs(d_x_img - x_img))
+    d_loss_g = tf.reduce_mean(tf.abs(d_g_net - g_net))
+    d_loss_x = tf.reduce_mean(tf.abs(d_x_net - x_net))
     d_loss= d_loss_x - k_t * d_loss_g
 
-    g_loss = tf.reduce_mean(tf.abs(d_g_img - g_img))
+    g_loss = tf.reduce_mean(tf.abs(d_g_net - g_net))
 
     g_optim = tf.train.AdamOptimizer(conf.g_lr).minimize(g_loss, var_list=g_vars)
     d_optim = tf.train.AdamOptimizer(conf.d_lr).minimize(d_loss, var_list=d_vars)
@@ -98,7 +102,7 @@ def main():
     # sample_seed = np.random.uniform(low=-1, high=1, size=(config.sample_size, z_dim)).astype(np.float32)
 
     ##========================= TRAIN MODELS ================================## 
-    z_fix = np.random.uniform(0, 1, size=(conf.n_batch, conf.n_z))
+    z_fix = np.random.uniform(-1, 1, size=(conf.n_batch, conf.n_z))
 
     x_fix = data_files[0:conf.n_batch]
     x_fix=[get_image(f, conf.n_img_pix, is_crop=conf.is_crop, resize_w=conf.n_img_out_pix, is_grayscale = conf.is_gray) for f in x_fix]
@@ -130,17 +134,16 @@ def main():
         n_iters = int(len(data_files)/conf.n_batch)
 
         for idx in range(0, n_iters):
-            print(n_step)
+           
             f_batch = data_files[idx*conf.n_batch:(idx+1)*conf.n_batch]
             data_batch = [get_image(f, conf.n_img_pix, is_crop=conf.is_crop, resize_w=conf.n_img_out_pix, is_grayscale = conf.is_gray) for f in f_batch]
             img_batch = np.array(data_batch).astype(np.float32)
-            img_batch = tf.clip_by_value((img_batch + 1)*127.5, 0, 255)
-            #img_batch = img_batch/127.5 - 1.
-
+            
             if conf.is_gray :
                 s,h,w = img_batch.shape
                 img_batch = img_batch.reshape(s, h, w, n_channel )
-
+                
+            
             #z_batch = np.random.normal(loc=0.0, scale=1.0, size=(conf.sample_size, conf.z_dim)).astype(np.float32)
             #z_batch = np.random.uniform(low=-1, high=1, size=(conf.n_batch, conf.n_z)).astype(np.float32)
 
@@ -157,7 +160,7 @@ def main():
                 })
 
             start_time = time.time()
-            result = sess.run(fetch_dict, feed_dict={x_img:img_batch})
+            result = sess.run(fetch_dict, feed_dict={x_net:img_batch})
             m = result['m']
 
             if n_step % conf.n_save_log_step == 0:
@@ -173,7 +176,7 @@ def main():
 
             if n_step % conf.n_save_img_step == 0:
                 g_sample = sess.run(g_img, feed_dict={z: z_fix})
-                g_ae, x_ae = sess.run([d_g_img,d_x_img] ,feed_dict={g_net:g_sample,x_img: x_fix})
+                g_ae, x_ae = sess.run([d_g_img,d_x_img] ,feed_dict={g_net:g_sample,x_net: x_fix})
 
                 save_images(g_sample,[n_grid_row,n_grid_row], os.path.join(checkpoint_dir, '{}_G.png'.format(n_step)))
                 save_images(g_ae, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir,  '{}_AE_G.png'.format(n_step)))
