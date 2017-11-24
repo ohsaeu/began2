@@ -21,7 +21,7 @@ def main():
     n_grid_row = int(np.sqrt(conf.n_batch))
     ##========================= DEFINE MODEL ===========================##
     z = tf.random_uniform(
-                (conf.n_batch, conf.n_z), minval=-1.0, maxval=1.0)
+                (conf.n_batch, conf.n_z), minval=0.0, maxval=1.0)
     x_img =  tf.placeholder(tf.float32, [conf.n_batch, conf.n_img_pix, conf.n_img_pix, n_channel], name='real_images')
     k_t = tf.Variable(0., trainable=False, name='k_t')
 
