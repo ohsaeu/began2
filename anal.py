@@ -47,7 +47,9 @@ def main():
        
     saver = tf.train.import_meta_graph(npz_path+'began2_model.ckpt.meta')
     saver.restore(sess, tf.train.latest_checkpoint(npz_path))
-  
+    
+    col = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+    
     g_idx=0
     e_idx=0
     d_idx=0                
@@ -55,7 +57,14 @@ def main():
         
         key = x.name.split(':')[0]
         scope = key.split('/')
-    
+        with tf.variable_scope(scope[0]) as vs1:
+            vs1.reuse_variables()
+            with tf.variable_scope(scope[1]) as vs2:
+                vs2.reuse_variables()
+                ref =tf.get_variable(scope[2], shape=x.shape) 
+                ref1=tf.assign(ref,x)
+                sess.run(ref1)
+        '''
         with tf.variable_scope(scope[0]) as vs1:
             vs1.reuse_variables()
             with tf.variable_scope(scope[1]) as vs2:
@@ -73,7 +82,7 @@ def main():
                     ref1=tf.assign(ref,d_params[d_idx])
                     sess.run(ref1)
                     d_idx+=1
-                    
+        '''            
 
     #z2 = tf.random_uniform((conf.n_batch, conf.n_img_out_pix,conf.n_img_out_pix,n_channel), minval=-1.0, maxval=1.0)
     z_fix =np.random.uniform(low=-1, high=1, size=(conf.n_batch, 64)).astype(np.float32)

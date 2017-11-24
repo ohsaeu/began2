@@ -28,8 +28,7 @@ def main():
     # execute generator
     g_net, g_vars = generate(z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel,  is_train=True, reuse=False)
     g_img=tf.clip_by_value((g_net + 1)*127.5, 0, 255)
-    #g_img= tf.clip_by_value((g_net + 1)*127.5, 0, 255)
-
+    
     # execute discriminator
     e_g_net, e_vars = encode(g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=True, reuse=False)
     d_g_net, d_vars = decode(e_g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=True, reuse=False)
@@ -99,7 +98,7 @@ def main():
     # sample_seed = np.random.uniform(low=-1, high=1, size=(config.sample_size, z_dim)).astype(np.float32)
 
     ##========================= TRAIN MODELS ================================## 
-    z_fix = np.random.uniform(-1, 1, size=(conf.n_batch, conf.n_z))
+    z_fix = np.random.uniform(0, 1, size=(conf.n_batch, conf.n_z))
 
     x_fix = data_files[0:conf.n_batch]
     x_fix=[get_image(f, conf.n_img_pix, is_crop=conf.is_crop, resize_w=conf.n_img_out_pix, is_grayscale = conf.is_gray) for f in x_fix]
@@ -135,7 +134,8 @@ def main():
             f_batch = data_files[idx*conf.n_batch:(idx+1)*conf.n_batch]
             data_batch = [get_image(f, conf.n_img_pix, is_crop=conf.is_crop, resize_w=conf.n_img_out_pix, is_grayscale = conf.is_gray) for f in f_batch]
             img_batch = np.array(data_batch).astype(np.float32)
-            img_batch = img_batch/127.5 - 1.
+            img_batch = tf.clip_by_value((img_batch + 1)*127.5, 0, 255)
+            #img_batch = img_batch/127.5 - 1.
 
             if conf.is_gray :
                 s,h,w = img_batch.shape
