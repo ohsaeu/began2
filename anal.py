@@ -41,7 +41,7 @@ def main():
         os.makedirs(checkpoint_dir)
 
     # load and fetch variables
-    npz_path ='C:/samples/img_download/wheels/wheeldesign/output/began2/17-11-14-11/'
+    npz_path ='C:/samples/img_download/wheels/wheeldesign/output/began2/17-11-24-17-35/'
     
     g_params = np.load( npz_path+'net_g.npz' )['params']
     d_params = np.load( npz_path+'net_d.npz' )['params']
@@ -80,7 +80,8 @@ def main():
                     
 
     #z2 = tf.random_uniform((conf.n_batch, conf.n_img_out_pix,conf.n_img_out_pix,n_channel), minval=-1.0, maxval=1.0)
-    z_fix =np.random.uniform(low=-1, high=1, size=(conf.n_batch, 64)).astype(np.float32)
+    z_d_fix =np.random.uniform(low=-1, high=1, size=(conf.n_batch, 64)).astype(np.float32)
+    z_e_fix =np.random.uniform(low=-1, high=1, size=(conf.n_batch,conf.n_img_out_pix,conf.n_img_out_pix,n_channel)).astype(np.float32)
     
     #load real image 
     data_files = glob(os.path.join(conf.data_dir,conf.dataset, "*"))
@@ -95,14 +96,16 @@ def main():
     # run ae        
     x_im =sess.run(d_img,feed_dict={g_net:x_fix})  
     #x_img= x_img*255
-    g_im =sess.run(g_img,feed_dict={z:z_fix})
-    z_im =sess.run(d_img,feed_dict={e_net:z_fix})  
+    g_im =sess.run(g_img,feed_dict={z:z_d_fix})
+    z_d_im =sess.run(d_img,feed_dict={e_net:z_d_fix})  
+    z_e_im =sess.run(d_img,feed_dict={g_net:z_e_fix})  
     #z_img= z_img*255
     
     # save image
     save_images(x_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_AE_X.png'))
     save_images(g_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_AE_G.png'))
-    save_images(z_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_AE_Z.png'))
+    save_images(z_d_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_AE_Z_D.png'))
+    save_images(z_e_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_AE_Z_E.png'))
       
     sess.close()
 

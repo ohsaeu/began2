@@ -29,8 +29,8 @@ def main():
     g_net, g_vars = generate(z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel,  is_train=True, reuse=False)
         
     # execute discriminator
-    e_g_net, e_vars = encode(g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=True, reuse=False)
-    d_g_net, d_vars = decode(e_g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=True, reuse=False)
+    e_g_net, enc_vars = encode(g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=True, reuse=False)
+    d_g_net, dec_vars = decode(e_g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=True, reuse=False)
     
     e_x_net, _ = encode(x_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=True, reuse=True)
     d_x_net, _ = decode(e_x_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=True, reuse=True)
@@ -40,6 +40,7 @@ def main():
     d_g_img=tf.clip_by_value((d_g_net + 1)*127.5, 0, 255)
     d_x_img=tf.clip_by_value((d_x_net + 1)*127.5, 0, 255)
     
+    d_vars = enc_vars + dec_vars
     
     #d_x_img = tf.clip_by_value((d_x_net + 1)*127.5, 0, 255)
     #d_loss_g = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=net_d_g, labels=tf.zeros_like(net_d_g)),name='d_loss_fake')
@@ -186,8 +187,8 @@ def main():
                 #save_images(g_ae, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir,  '{}_AE_G.png'.format(n_step)))
                 #save_images(x_ae, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, '{}_AE_X.png'.format(n_step)))
                 save_npz(g_vars, name=net_g_name, sess=sess)
-                save_npz(e_vars, name=net_e_name, sess=sess)
-                save_npz(d_vars, name=net_d_name, sess=sess)
+                save_npz(enc_vars, name=net_e_name, sess=sess)
+                save_npz(dec_vars, name=net_d_name, sess=sess)
                 saver.save(sess, checkpoint_dir+"/began2_model.ckpt")
 
 
