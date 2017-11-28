@@ -93,9 +93,7 @@ def main():
 
     saver = tf.train.Saver()
 
-    net_g_name = os.path.join(checkpoint_dir, 'net_g.npz')
-    net_e_name = os.path.join(checkpoint_dir, 'net_e.npz')
-    net_d_name = os.path.join(checkpoint_dir, 'net_d.npz')
+
 
     data_files = glob(os.path.join(conf.data_dir,conf.dataset, "*"))
     shuffle(data_files)
@@ -185,15 +183,20 @@ def main():
                 
                 #save_images(g_sample,[n_grid_row,n_grid_row], os.path.join(checkpoint_dir, '{}_G.png'.format(n_step)))
                 #save_images(g_ae, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir,  '{}_AE_G.png'.format(n_step)))
-                #save_images(x_ae, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, '{}_AE_X.png'.format(n_step)))
-                save_npz(g_vars, name=net_g_name, sess=sess)
-                save_npz(enc_vars, name=net_e_name, sess=sess)
-                save_npz(dec_vars, name=net_d_name, sess=sess)
-                saver.save(sess, checkpoint_dir+"/began2_model.ckpt")
-
-
+                #save_images(x_ae, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, '{}_AE_X.png'.format(n_step)))    
+                
             n_step+=1
+            
+        net_g_name = os.path.join(checkpoint_dir, str(n_step)+'net_g.npz')
+        net_e_name = os.path.join(checkpoint_dir, str(n_step)+'net_e.npz')
+        net_d_name = os.path.join(checkpoint_dir, str(n_step)+'net_d.npz')    
+        save_npz(g_vars, name=net_g_name, sess=sess)
+        save_npz(enc_vars, name=net_e_name, sess=sess)
+        save_npz(dec_vars, name=net_d_name, sess=sess)
+        saver.save(sess, checkpoint_dir+"/"+str(n_step)+"_"+"began2_model.ckpt")  
+          
     cost_file.close()
+    
     sess.close()
 
 if __name__ == '__main__':
