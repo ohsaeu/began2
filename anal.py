@@ -1,13 +1,15 @@
 import os, pprint, time
 import numpy as np
 import tensorflow as tf
+import pandas as pd
+import matplotlib.pyplot as plt
 from glob import glob
 from random import shuffle
 from model import generate, encode, decode
 from utils import save_images, get_image
 from config import get_config
 pp = pprint.PrettyPrinter()
-
+    
 def main():
 
     #load configuration
@@ -41,11 +43,12 @@ def main():
         os.makedirs(checkpoint_dir)
 
     # load and fetch variables
-    npz_path ='C:/samples/img_download/wheels/wheeldesign/output/began2/17-11-24-17-35/'
+    npz_path ='C:/samples/img_download/wheels/wheeldesign/output/began2/began2_250epoch_05gamma_17-11-28-13-25/'
+    itr ='101082_'
     
-    g_params = np.load( npz_path+'net_g.npz' )['params']
-    d_params = np.load( npz_path+'net_d.npz' )['params']
-    e_params = np.load( npz_path+'net_e.npz' )['params']
+    g_params = np.load( npz_path+itr+'net_g.npz' )['params']
+    d_params = np.load( npz_path+itr+'net_d.npz' )['params']
+    e_params = np.load( npz_path+itr+'net_e.npz' )['params']
        
     saver = tf.train.import_meta_graph(npz_path+'began2_model.ckpt.meta')
     saver.restore(sess, tf.train.latest_checkpoint(npz_path))
@@ -78,10 +81,6 @@ def main():
                     sess.run(ref1)
                     d_idx+=1
                     
-
-    #z2 = tf.random_uniform((conf.n_batch, conf.n_img_out_pix,conf.n_img_out_pix,n_channel), minval=-1.0, maxval=1.0)
-    z_d_fix =np.random.uniform(low=-1, high=1, size=(conf.n_batch, 64)).astype(np.float32)
-    z_e_fix =np.random.uniform(low=-1, high=1, size=(conf.n_batch,conf.n_img_out_pix,conf.n_img_out_pix,n_channel)).astype(np.float32)
     
     #load real image 
     data_files = glob(os.path.join(conf.data_dir,conf.dataset, "*"))
@@ -91,22 +90,92 @@ def main():
     x_fix = np.array(x_fix).astype(np.float32)
     if(conf.is_gray == 1):
         s,h,w = x_fix.shape
-        x_fix = x_fix.reshape(s,h, w,n_channel )    
-    
+        x_fix = x_fix.reshape(s,h, w,n_channel )   
+         
+  
     # run ae        
     x_im =sess.run(d_img,feed_dict={g_net:x_fix})  
-    #x_img= x_img*255
-    g_im =sess.run(g_img,feed_dict={z:z_d_fix})
-    z_d_im =sess.run(d_img,feed_dict={e_net:z_d_fix})  
-    z_e_im =sess.run(d_img,feed_dict={g_net:z_e_fix})  
-    #z_img= z_img*255
-    
-    # save image
     save_images(x_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_AE_X.png'))
-    save_images(g_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_AE_G.png'))
-    save_images(z_d_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_AE_Z_D.png'))
-    save_images(z_e_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_AE_Z_E.png'))
-      
+    
+    n_loop = 1 
+    # generate images from generator and ae
+    for i in range(3):
+        z_test =np.random.uniform(low=-1, high=1, size=(conf.n_batch, 64)).astype(np.float32)
+        g_im =sess.run(g_img,feed_dict={z:z_test})  
+        save_images(g_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, str(i)+'_anal_G.png'))
+        g_im = g_im/127.5 - 1.
+        ae_g_im =sess.run(d_img,feed_dict={g_net:g_im})  
+        save_images(ae_g_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, str(i)+'_anal_AE_G.png'))
+    
+    
+    
+    # generate images from discriminator and ae
+    for i in range(n_loop):
+        z_test =np.random.uniform(low=-1, high=1, size=(conf.n_batch, conf.n_img_out_pix, conf.n_img_out_pix,n_channel)).astype(np.float32)
+        d_im =sess.run(d_img,feed_dict={g_net:z_test})  
+        save_images(d_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, str(i)+'_anal_D.png'))
+        
+    def saveFeatures():
+        # get latent value from real images (10*n_batch)
+        for i in range(n_loop):
+            shuffle(data_files)
+            f_test = data_files[0:conf.n_batch]
+            x_test=[get_image(f, conf.n_img_pix, is_crop=conf.is_crop, resize_w=conf.n_img_out_pix, is_grayscale = conf.is_gray) for f in f_test]
+            x_test = np.array(x_test).astype(np.float32)
+            if(conf.is_gray == 1):
+                s,h,w = x_test.shape
+                x_test = x_test.reshape(s,h, w,n_channel ) 
+        
+            latent =sess.run(e_net,feed_dict={g_net:x_test}) 
+            
+            f_latent = open(checkpoint_dir+ '/latent.csv', 'a')
+            for k in range(latent.shape[0]):
+                f_latent.write(str(latent[k].tolist()).replace("[", "").replace("]", "")+ '\n')
+            f_latent.close()
+            
+    def getFeatures():
+        f_path=checkpoint_dir+'/latent.csv'#'C:/samples/img_download/wheels/wheeldesign/output/began2_anal/17-11-28-14-52/latent.csv'    
+        data = pd.read_csv(f_path)
+        
+        n_latent = data.shape[1]
+        mean = [None]*n_latent
+        std = [None]*n_latent
+        for i in range(n_latent):
+            #i+=1
+            latent = np.array(data.iloc[:, i:i+1])
+            mean[i] = np.mean(latent)
+            std[i] = np.std(latent)
+            
+        plt.show()
+        return mean, std
+    
+    def generateFeature(mean, std):
+        z_size = len(mean)
+        feature = [None]*z_size
+        for i in range(z_size):
+            feature[i] = np.random.normal(loc=mean[i], scale=std[i], size=z_size*n_loop)
+        return feature   
+    
+    
+    def generateImage(feature):
+        feature = np.array(feature)
+        idx=0
+        for i in range(n_loop):
+            
+            f_net = feature[:,idx:idx+64]
+            f_img =sess.run(d_img,feed_dict={e_net:f_net}) 
+            save_images(f_img, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, str(i)+'_anal_G_df.png'))
+            idx+=64
+    
+    # generate images from random z as features on discriminator
+           
+    saveFeatures()
+    z_mean, z_std = getFeatures()
+    z_feature = generateFeature(z_mean, z_std)
+    shuffle(z_feature)
+    generateImage(z_feature)
+    
+       
     sess.close()
 
 if __name__ == '__main__':
