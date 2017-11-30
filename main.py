@@ -186,14 +186,15 @@ def main():
                 #save_images(x_ae, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, '{}_AE_X.png'.format(n_step)))    
                 
             n_step+=1
-            
-        net_g_name = os.path.join(checkpoint_dir, str(n_step)+'_'+'net_g.npz')
-        net_e_name = os.path.join(checkpoint_dir, str(n_step)+'_'+'net_e.npz')
-        net_d_name = os.path.join(checkpoint_dir, str(n_step)+'_'+'net_d.npz')    
-        save_npz(g_vars, name=net_g_name, sess=sess)
-        save_npz(enc_vars, name=net_e_name, sess=sess)
-        save_npz(dec_vars, name=net_d_name, sess=sess)
-        saver.save(sess, checkpoint_dir+"/"+str(n_step)+"_"+"began2_model.ckpt")  
+        
+        if epoch %10 ==0:    
+            net_g_name = os.path.join(checkpoint_dir, str(n_step)+'_'+'net_g.npz')
+            net_e_name = os.path.join(checkpoint_dir, str(n_step)+'_'+'net_e.npz')
+            net_d_name = os.path.join(checkpoint_dir, str(n_step)+'_'+'net_d.npz')    
+            save_npz(g_vars, name=net_g_name, sess=sess)
+            save_npz(enc_vars, name=net_e_name, sess=sess)
+            save_npz(dec_vars, name=net_d_name, sess=sess)
+            saver.save(sess, checkpoint_dir+"/"+str(n_step)+"_"+"began2_model.ckpt")  
           
     cost_file.close()
     
