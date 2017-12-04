@@ -43,8 +43,8 @@ def main():
         os.makedirs(checkpoint_dir)
 
     # load and fetch variables
-    npz_path ='C:/samples/img_download/wheels/wheeldesign/output/began2/began2_250epoch_05gamma_17-11-28-13-25/'
-    itr ='101082_'
+    npz_path ='C:/samples/img_download/wheels/data2/output/began2_data2_17-12-01-15-57/'
+    itr ='390260_'
     
     g_params = np.load( npz_path+itr+'net_g.npz' )['params']
     d_params = np.load( npz_path+itr+'net_d.npz' )['params']
@@ -91,23 +91,9 @@ def main():
                 g_mnfd[j] = g_mnfd[0]+ ((g_mnfd[63] -g_mnfd[0])/63 *j)
             save_image(np.asarray(g_mnfd), os.path.join(checkpoint_dir, str(i)+'mnfd_anal_G.png'))
     
-    def manifoldD():
-        data_files = glob(os.path.join(conf.data_dir,conf.dataset, "*"))
-        shuffle(data_files)
-        d_x = data_files[0:conf.n_batch]
-        d_x=[get_image(f, conf.n_img_pix, is_crop=conf.is_crop, resize_w=conf.n_img_out_pix, is_grayscale = conf.is_gray) for f in d_x]
-        d_x = np.array(d_x).astype(np.float32)
-        if(conf.is_gray == 1):
-            s,h,w = d_x.shape
-            d_x = d_x.reshape(s,h, w,n_channel )  
-            
-        mean = [None]*64
-        for i in range(d_x.shape[0]):
-            print()
-            #mean[i] = np.mean(latent)
 
-    #manifoldG()
-    manifoldD()
+
+    manifoldG()
        
     sess.close()
 
