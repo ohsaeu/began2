@@ -33,7 +33,7 @@ def main():
     d_img=tf.clip_by_value((d_net + 1)*127.5, 0, 255)
     # start session
     sess = tf.InteractiveSession()
-    init = tf.global_variables_initializer()
+    init = tf.global_variables_initializer() 
     sess.run(init)
 
     # init directories
@@ -42,8 +42,8 @@ def main():
         os.makedirs(checkpoint_dir)
 
     # load and fetch variables
-    npz_path ='C:/samples/img_download/wheels/data2/output/began2_no_rot_17-11-30-17-48/'
-    itr ='467555_'
+    npz_path ='C:/samples/img_download/wheels/data2/output/began2_data2_17-12-01-15-57/'
+    itr ='650260_'
     
     g_params = np.load( npz_path+itr+'net_g.npz' )['params']
     d_params = np.load( npz_path+itr+'net_d.npz' )['params']
@@ -180,14 +180,14 @@ def main():
         save_images(d_mnfd, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_D_Mean_df.png'))    
     
     getRealAR()
-    getRandomG()
-    getRandomAE()
+    #getRandomG()
+    #getRandomAE()
            
     saveFeatures()
     z_mean, z_std = getFeatures()
-    z_feature = generateFeature(z_mean, z_std)
-    shuffle(z_feature)
-    generateImage(z_feature)
+    #z_feature = generateFeature(z_mean, z_std)
+    #shuffle(z_feature)
+    #generateImage(z_feature)
     getDiscMeanFeature(z_mean)
        
     sess.close()

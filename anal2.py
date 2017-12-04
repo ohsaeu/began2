@@ -81,15 +81,16 @@ def main():
                     
     def manifoldG():
         z_test =np.random.uniform(low=-1, high=1, size=(conf.n_batch, 64)).astype(np.float32)
-        g_im =sess.run(g_img,feed_dict={z:z_test})
-        step =int(len(g_im)/2) 
+        #g_im =sess.run(g_img,feed_dict={z:z_test})
+        step =int(len(z_test)/2) 
         for i in range(step):
             g_mnfd = [None]*64
-            g_mnfd[0] = g_im[0]
-            g_mnfd[63] = g_im[i+step]
+            g_mnfd[0] = z_test[0]
+            g_mnfd[63] = z_test[i+step]
             for j in range(1,63):
                 g_mnfd[j] = g_mnfd[0]+ ((g_mnfd[63] -g_mnfd[0])/63 *j)
-            save_image(np.asarray(g_mnfd), os.path.join(checkpoint_dir, str(i)+'mnfd_anal_G.png'))
+            g_intp =sess.run(g_img,feed_dict={z:np.asarray(g_mnfd)})
+            save_image(g_intp, os.path.join(checkpoint_dir, str(i)+'mnfd_anal_G.png'))
     
 
 
