@@ -38,13 +38,12 @@ def main():
 
     # init directories
     checkpoint_dir = os.path.join(conf.log_dir,conf.curr_time)
-    checkpoint_dir = 'C:/samples/img_download/wheels/data2/output/began2_data2_17-12-01-15-57/anal/390260_17-12-04-10-59/'
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
     # load and fetch variables
-    npz_path ='C:/samples/img_download/wheels/data2/output/began2_data2_17-12-01-15-57/'
-    itr ='390260_'
+    npz_path ='C:/samples/img_download/wheels/data2/output/began2_no_rot_17-11-30-17-48/'
+    itr ='467555_'
     
     g_params = np.load( npz_path+itr+'net_g.npz' )['params']
     d_params = np.load( npz_path+itr+'net_d.npz' )['params']
@@ -179,6 +178,10 @@ def main():
             m_net[i] = mean +1/63 *i
         d_mnfd =sess.run(d_img,feed_dict={e_net:m_net})                       
         save_images(d_mnfd, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_D_Mean_df.png'))    
+    
+    getRealAR()
+    getRandomG()
+    getRandomAE()
            
     saveFeatures()
     z_mean, z_std = getFeatures()
