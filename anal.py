@@ -22,8 +22,7 @@ def main():
     
     n_grid_row = int(np.sqrt(conf.n_batch))
     
-    z = tf.random_uniform(
-                (conf.n_batch, conf.n_z), minval=-1.0, maxval=1.0)
+    z = tf.random_uniform((conf.n_batch, conf.n_z), minval=-1.0, maxval=1.0)
     # execute generator
     g_net,_ = generate(z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=False, reuse=False) 
     # execute discriminator
@@ -39,12 +38,13 @@ def main():
 
     # init directories
     checkpoint_dir = os.path.join(conf.log_dir,conf.curr_time)
+    checkpoint_dir = 'C:/samples/img_download/wheels/data2/output/began2_data2_17-12-01-15-57/anal/390260_17-12-04-10-59/'
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
     # load and fetch variables
-    npz_path ='C:/samples/img_download/wheels/wheeldesign/output/began2/began2_250epoch_05gamma_17-11-28-13-25/'
-    itr ='101082_'
+    npz_path ='C:/samples/img_download/wheels/data2/output/began2_data2_17-12-01-15-57/'
+    itr ='390260_'
     
     g_params = np.load( npz_path+itr+'net_g.npz' )['params']
     d_params = np.load( npz_path+itr+'net_d.npz' )['params']
@@ -92,28 +92,31 @@ def main():
         s,h,w = x_fix.shape
         x_fix = x_fix.reshape(s,h, w,n_channel )   
          
-  
-    # run ae        
-    x_im =sess.run(d_img,feed_dict={g_net:x_fix})  
-    save_images(x_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_AE_X.png'))
+    n_loop = 1
     
-    n_loop = 1 
-    # generate images from generator and ae
-    for i in range(3):
-        z_test =np.random.uniform(low=-1, high=1, size=(conf.n_batch, 64)).astype(np.float32)
-        g_im =sess.run(g_img,feed_dict={z:z_test})  
-        save_images(g_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, str(i)+'_anal_G.png'))
-        g_im = g_im/127.5 - 1.
-        ae_g_im =sess.run(d_img,feed_dict={g_net:g_im})  
-        save_images(ae_g_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, str(i)+'_anal_AE_G.png'))
+    def getRealAR():
+        # run ae        
+        x_im =sess.run(d_img,feed_dict={g_net:x_fix})  
+        save_images(x_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_AE_X.png'))
+    
+    def getRandomG():
+     
+        # generate images from generator and ae
+        for i in range(3):
+            z_test =np.random.uniform(low=-1, high=1, size=(conf.n_batch, 64)).astype(np.float32)
+            g_im =sess.run(g_img,feed_dict={z:z_test})  
+            save_images(g_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, str(i)+'_anal_G.png'))
+            g_im = g_im/127.5 - 1.
+            ae_g_im =sess.run(d_img,feed_dict={g_net:g_im})  
+            save_images(ae_g_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, str(i)+'_anal_AE_G.png'))
     
     
-    
-    # generate images from discriminator and ae
-    for i in range(n_loop):
-        z_test =np.random.uniform(low=-1, high=1, size=(conf.n_batch, conf.n_img_out_pix, conf.n_img_out_pix,n_channel)).astype(np.float32)
-        d_im =sess.run(d_img,feed_dict={g_net:z_test})  
-        save_images(d_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, str(i)+'_anal_D.png'))
+    def getRandomAE():
+        # generate images from discriminator and ae
+        for i in range(n_loop):
+            z_test =np.random.uniform(low=-1, high=1, size=(conf.n_batch, conf.n_img_out_pix, conf.n_img_out_pix,n_channel)).astype(np.float32)
+            d_im =sess.run(d_img,feed_dict={g_net:z_test})  
+            save_images(d_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, str(i)+'_anal_D.png'))
         
     def saveFeatures():
         # get latent value from real images (10*n_batch)
@@ -167,14 +170,22 @@ def main():
             save_images(f_img, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, str(i)+'_anal_G_df.png'))
             idx+=64
     
-    # generate images from random z as features on discriminator
+    def getDiscMeanFeature(mean):
+        mean = np.array(mean)
+        mean = mean-2
+       
+        m_net = [None]*64
+        for i in range(64):
+            m_net[i] = mean +1/63 *i
+        d_mnfd =sess.run(d_img,feed_dict={e_net:m_net})                       
+        save_images(d_mnfd, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_D_Mean_df.png'))    
            
     saveFeatures()
     z_mean, z_std = getFeatures()
     z_feature = generateFeature(z_mean, z_std)
     shuffle(z_feature)
     generateImage(z_feature)
-    
+    getDiscMeanFeature(z_mean)
        
     sess.close()
 
