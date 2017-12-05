@@ -39,6 +39,7 @@ def main():
 
     # init directories
     checkpoint_dir = os.path.join(conf.log_dir,conf.curr_time)
+    checkpoint_dir = ''
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
@@ -93,8 +94,26 @@ def main():
             save_image(g_intp, os.path.join(checkpoint_dir, str(i)+'mnfd_anal_G.png'))
     
 
-
-    manifoldG()
+    
+    def extractRealFeatrue():
+        data_files = glob(os.path.join(conf.data_dir,conf.dataset, "*"))
+        n_iters = int(len(data_files)/conf.n_batch)
+        for idx in range(0, n_iters):
+            f_batch = data_files[idx*conf.n_batch:(idx+1)*conf.n_batch]
+            data_batch = [get_image(f, conf.n_img_pix, is_crop=conf.is_crop, resize_w=conf.n_img_out_pix, is_grayscale = conf.is_gray) for f in f_batch]
+            img_batch = np.array(data_batch).astype(np.float32)
+            
+            if conf.is_gray :
+                s,h,w = img_batch.shape
+                img_batch = img_batch.reshape(s, h, w, n_channel )
+                
+            df_real =sess.run(e_net,feed_dict={g_net:img_batch}) 
+            
+            f_df_real = open(checkpoint_dir+ '/real_feature.csv', 'a')
+            for j in range(df_real.shape[0]):
+                f_df_real.write(str(df_real[j].tolist()).replace("[", "").replace("]", "")+ '\n')
+            f_df_real.close()
+    #manifoldG()
        
     sess.close()
 
