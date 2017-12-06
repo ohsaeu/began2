@@ -15,9 +15,9 @@ def add_argument_group(name):
 
 #flags
 flags = add_argument_group('Flags')
-flags.add_argument("--dataset", type=str, default= "20171201_128_gray")
+flags.add_argument("--dataset", type=str, default= "20171205_128_gray")
 flags.add_argument("--data_dir", type=str, default="C:/samples/img_download/wheels/data2/img/")
-flags.add_argument("--log_dir", type=str, default="C:/samples/img_download/wheels/data2/output/began2_data2_17-12-01-15-57/anal/")
+flags.add_argument("--log_dir", type=str, default="C:/samples/img_download/wheels/data2/output/began2_07_data21_17-12-04-17-49/anal/")
 flags.add_argument("--curr_time", type=str, default=datetime.datetime.now().strftime("%y-%m-%d-%H-%M"))
 flags.add_argument("--checkpoint_dir", type=str, default= "checkpoint")
 #flags.add_argument("--sample_dir", type=str, default= "sample")

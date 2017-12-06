@@ -1,13 +1,14 @@
-import os, pprint, time
+import os, pprint, time, math
 import numpy as np
 import tensorflow as tf
-import pandas as pd
-import matplotlib.pyplot as plt
 from glob import glob
 from random import shuffle
 from model import generate, encode, decode
 from utils import save_image, get_image
 from config import get_config
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
+import pandas as pd
 pp = pprint.PrettyPrinter()
     
 def main():
@@ -39,13 +40,15 @@ def main():
 
     # init directories
     checkpoint_dir = os.path.join(conf.log_dir,conf.curr_time)
-    checkpoint_dir = ''
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
     # load and fetch variables
-    npz_path ='C:/samples/img_download/wheels/data2/output/began2_data2_17-12-01-15-57/'
-    itr ='390260_'
+    npz_path ='C:/samples/img_download/wheels/data2/output/began2_07_data21_17-12-04-17-49/'
+    itr ='55611_'
+    
+    n_neighbors =5
+    anal_dir='C:/samples/img_download/wheels/data2/output/began2_07_data21_17-12-04-17-49/anal/real_df/'
     
     g_params = np.load( npz_path+itr+'net_g.npz' )['params']
     d_params = np.load( npz_path+itr+'net_d.npz' )['params']
@@ -96,10 +99,11 @@ def main():
 
     
     def extractRealFeatrue():
-        data_files = glob(os.path.join(conf.data_dir,conf.dataset, "*"))
-        n_iters = int(len(data_files)/conf.n_batch)
+        f_data = glob(os.path.join(conf.data_dir,conf.dataset, "*"))
+        n_iters = int(len(f_data)/conf.n_batch)
+        n_idx =1
         for idx in range(0, n_iters):
-            f_batch = data_files[idx*conf.n_batch:(idx+1)*conf.n_batch]
+            f_batch = f_data[idx*conf.n_batch:(idx+1)*conf.n_batch]
             data_batch = [get_image(f, conf.n_img_pix, is_crop=conf.is_crop, resize_w=conf.n_img_out_pix, is_grayscale = conf.is_gray) for f in f_batch]
             img_batch = np.array(data_batch).astype(np.float32)
             
@@ -111,9 +115,65 @@ def main():
             
             f_df_real = open(checkpoint_dir+ '/real_feature.csv', 'a')
             for j in range(df_real.shape[0]):
-                f_df_real.write(str(df_real[j].tolist()).replace("[", "").replace("]", "")+ '\n')
+                f_df_real.write(str(n_idx)+', '+f_batch[j]+ ', '+str(df_real[j].tolist()).replace("[", "").replace("]", "")+ '\n')
+                n_idx+=1
             f_df_real.close()
+            
+    def doPCA(f_in, n_components):
+        l_x = list()
+        with open(f_in+'real_feature.csv','r') as file:    
+            for line in file:
+                pix = line.split(',',2)
+                df = np.fromstring(pix[2], dtype=float, sep=',') 
+                df = df[2:]
+                l_x.append(df)
+                df =None
+        file.close()
+
+        l_p = PCA(n_components=n_components).fit(l_x)
+        return l_p.transform(l_x) 
+    
+    def doKmeans(l_x):  
+         
+        kmeans = KMeans(init='k-means++', n_clusters=n_neighbors, n_init=10)
+        kmeans.fit(l_x)
+        n_idx=1
+        f_km = open(checkpoint_dir+'/'+str(n_neighbors)+'_Kmeans.csv','w')
+        for i in range(l_x.shape[0]):
+            arr = np.concatenate((l_x[i],[i+1], [kmeans.labels_[i]]))     
+            f_km.write(str(arr[0])+','+ str(arr[1])+ ','+str(arr[ 2])+ ','+str(arr[3])+','+str(n_idx)  +'\n')
+            n_idx+=1
+        f_km.close()    
+        
+
+    def saveClusterImages():
+        df_km = pd.read_csv(anal_dir+'/'+str(n_neighbors)+'_Kmeans.csv')
+        df_x = pd.read_csv(anal_dir+'/real_feature.csv')
+        for i in range(n_neighbors):
+            x_cluster =df_x.ix[df_km.iloc[:,3] == i]
+            x_pix = x_cluster.iloc[:, 2:]
+            x_pix = np.asarray(x_pix)
+            
+            x_total = x_pix.shape[0]
+            c_net=None
+            for j in range(math.ceil(x_total/64)):
+                fr = 64*j
+                to = 64*(j+1)
+                if to >x_total:
+                    c_net = np.ones((64,64))
+                    to = x_total % 64
+                    c_net[0:to, :] = x_pix[fr:x_total, :]
+                else:
+                    c_net = x_pix[fr:to, :]
+                c_img =sess.run(d_img,feed_dict={e_net:c_net})
+                save_image(c_img, anal_dir+'/'+str(i)+'_cluster_'+ str(j)+'.jpg')
+    
+           
     #manifoldG()
+    #extractRealFeatrue()
+    
+    doKmeans(doPCA(anal_dir,2))
+    #saveClusterImages()
        
     sess.close()
 
