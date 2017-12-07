@@ -13,8 +13,8 @@ def main():
     conf, _ = get_config()
     
     n_neighbors =5
-    anal_dir='C:/samples/img_download/wheels/data2/output/began2_07_data21_17-12-04-17-49/anal/real_df/'
-    df_km = pd.read_csv(anal_dir+'/'+str(n_neighbors)+'_Kmeans.csv')
+    anal_dir=conf.log_dir+'anal/g_df/'
+    df_km = pd.read_csv(anal_dir+'/'+str(n_neighbors)+'_AllKmeans.csv')
         
     
     def showKMPlt():       
@@ -38,7 +38,26 @@ def main():
         fig.canvas.mpl_connect('button_press_event', onclick)
         plt.show()
 
+    def showAllKMPlt():       
+        
+        fig, ax = plt.subplots()  
+         
+        l_cluster = [None]*n_neighbors
+        colors = ['red','pink','yellow','green','blue', 'brown', 'violet', 'orange', 'black', 'gray']
+        for i in range(2):
+            cluster =df_km.ix[df_km.iloc[:,2] == i]
+            cluster= np.asarray(cluster)
+            l_cluster[i] = plt.scatter(cluster[:, 0], cluster[:, 1], c=colors[i])
+         
+        #for j in range(l_k.shape[0]):
+        #    ax.annotate(l_k[j, 2], (l_k[j, 0],l_k[j, 1]))
+        #ax.legend(loc=2)
+        
+        label = np.arange(n_neighbors)
+        plt.legend(l_cluster, label)
 
+        fig.canvas.mpl_connect('button_press_event', onclick)
+        plt.show()    
     
     def onclick(event):
         print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
@@ -51,7 +70,7 @@ def main():
 
         id = df_km.ix[y].iloc[:,4]
         img_path = list()
-        with open(anal_dir+'real_feature.csv','r') as file:    
+        with open(anal_dir+'xg_feature.csv','r') as file:    
             for line in file:
                 x_id = line.split(',',2)
                 if(float(x_id[0])in id.values):    
@@ -73,7 +92,7 @@ def main():
         if n_img>0:
             plt.show()
         
-    showKMPlt()
+    showAllKMPlt()
        
 
 if __name__ == '__main__':

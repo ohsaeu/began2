@@ -8,6 +8,7 @@ from utils import save_image, get_image
 from config import get_config
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
+import cv2
 import pandas as pd
 pp = pprint.PrettyPrinter()
     
@@ -44,11 +45,11 @@ def main():
         os.makedirs(checkpoint_dir)
 
     # load and fetch variables
-    npz_path ='C:/samples/img_download/wheels/data2/output/began2_07_data21_17-12-04-17-49/'
-    itr ='55611_'
+    npz_path =conf.log_dir
+    itr ='222111_'
     
     n_neighbors =5
-    anal_dir='C:/samples/img_download/wheels/data2/output/began2_07_data21_17-12-04-17-49/anal/real_df/'
+    anal_dir=conf.log_dir+'anal/g_df/'
     
     g_params = np.load( npz_path+itr+'net_g.npz' )['params']
     d_params = np.load( npz_path+itr+'net_d.npz' )['params']
@@ -113,19 +114,38 @@ def main():
                 
             df_real =sess.run(e_net,feed_dict={g_net:img_batch}) 
             
-            f_df_real = open(checkpoint_dir+ '/real_feature.csv', 'a')
+            f_df_real = open(anal_dir+ '/x_feature.csv', 'a')
             for j in range(df_real.shape[0]):
                 f_df_real.write(str(n_idx)+', '+f_batch[j]+ ', '+str(df_real[j].tolist()).replace("[", "").replace("]", "")+ '\n')
                 n_idx+=1
             f_df_real.close()
+    
+    def generateGFeatrue():
+        n_iters=20
+        n_idx =1
+        for _ in range(0, n_iters):
+            z_df =np.random.uniform(low=-1, high=1, size=(conf.n_batch, 64)).astype(np.float32)
+            z_net =sess.run(g_net,feed_dict={z:z_df})  
+            z_img=np.clip((z_net + 1)*127.5, 0, 255)   
+            df_z =sess.run(e_net,feed_dict={g_net:z_net}) 
             
+            f_df_z = open(anal_dir+ 'g_feature.csv', 'a')
+            f_z = open(anal_dir+ 'z.csv', 'a')
+            for j in range(df_z.shape[0]):
+                img_path = anal_dir+'G/'+str(n_idx)+'.jpg'
+                cv2.imwrite(img_path, z_img[j])
+                f_df_z.write(str(n_idx)+', '+img_path+ ', '+str(df_z[j].tolist()).replace("[", "").replace("]", "")+ '\n')
+                f_z.write(str(z_df[j].tolist()).replace("[", "").replace("]", "")+ '\n')
+                n_idx+=1
+            f_df_z.close()
+            f_z.close()
+                    
     def doPCA(f_in, n_components):
         l_x = list()
-        with open(f_in+'real_feature.csv','r') as file:    
+        with open(f_in,'r') as file:    
             for line in file:
                 pix = line.split(',',2)
                 df = np.fromstring(pix[2], dtype=float, sep=',') 
-                df = df[2:]
                 l_x.append(df)
                 df =None
         file.close()
@@ -138,7 +158,7 @@ def main():
         kmeans = KMeans(init='k-means++', n_clusters=n_neighbors, n_init=10)
         kmeans.fit(l_x)
         n_idx=1
-        f_km = open(checkpoint_dir+'/'+str(n_neighbors)+'_Kmeans.csv','w')
+        f_km = open(anal_dir+'/'+str(n_neighbors)+'_AllKmeans.csv','w')
         for i in range(l_x.shape[0]):
             arr = np.concatenate((l_x[i],[i+1], [kmeans.labels_[i]]))     
             f_km.write(str(arr[0])+','+ str(arr[1])+ ','+str(arr[ 2])+ ','+str(arr[3])+','+str(n_idx)  +'\n')
@@ -148,7 +168,7 @@ def main():
 
     def saveClusterImages():
         df_km = pd.read_csv(anal_dir+'/'+str(n_neighbors)+'_Kmeans.csv')
-        df_x = pd.read_csv(anal_dir+'/real_feature.csv')
+        df_x = pd.read_csv(anal_dir+'/g_feature.csv')
         for i in range(n_neighbors):
             x_cluster =df_x.ix[df_km.iloc[:,3] == i]
             x_pix = x_cluster.iloc[:, 2:]
@@ -171,8 +191,8 @@ def main():
            
     #manifoldG()
     #extractRealFeatrue()
-    
-    doKmeans(doPCA(anal_dir,2))
+    #generateGFeatrue()
+    doKmeans(doPCA(anal_dir+'xg_feature.csv',2)) #+'real_feature.csv'
     #saveClusterImages()
        
     sess.close()

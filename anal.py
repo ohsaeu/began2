@@ -42,8 +42,8 @@ def main():
         os.makedirs(checkpoint_dir)
 
     # load and fetch variables
-    npz_path ='C:/samples/img_download/wheels/data2/output/began2_data2_17-12-01-15-57/'
-    itr ='650260_'
+    npz_path =conf.log_dir
+    itr ='222111_'
     
     g_params = np.load( npz_path+itr+'net_g.npz' )['params']
     d_params = np.load( npz_path+itr+'net_d.npz' )['params']
@@ -109,7 +109,25 @@ def main():
             ae_g_im =sess.run(d_img,feed_dict={g_net:g_im})  
             save_images(ae_g_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, str(i)+'_anal_AE_G.png'))
     
-    
+    def getFixedG(f_in):
+        l_z = list()
+        with open(f_in,'r') as file:    
+            for line in file:
+               l_z.append(np.fromstring(line, dtype=float, sep=','))
+        file.close()
+        n_loop = int(len(l_z)/64)
+        
+        l_z = np.asarray(l_z)
+        
+        for i in range(n_loop):
+            fr = 64*i
+            to = 64*(i+1)
+            z_test =l_z[fr:to]
+            g_im =sess.run(g_img,feed_dict={z:z_test})  
+            save_images(g_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, itr+str(i)+'_anal_fix_G.png'))
+            #g_im = g_im/127.5 - 1.
+            #ae_g_im =sess.run(d_img,feed_dict={g_net:g_im})  
+            #save_images(ae_g_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, str(i)+'_anal_AE_G.png'))
     def getRandomAE():
         # generate images from discriminator and ae
         for i in range(n_loop):
@@ -179,16 +197,18 @@ def main():
         d_mnfd =sess.run(d_img,feed_dict={e_net:m_net})                       
         save_images(d_mnfd, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_D_Mean_df.png'))    
     
-    getRealAR()
+    getFixedG(conf.log_dir+'anal/g_df/z.csv')
+    
+    #getRealAR()
     #getRandomG()
     #getRandomAE()
            
-    saveFeatures()
-    z_mean, z_std = getFeatures()
+    #saveFeatures()
+    #z_mean, z_std = getFeatures()
     #z_feature = generateFeature(z_mean, z_std)
     #shuffle(z_feature)
     #generateImage(z_feature)
-    getDiscMeanFeature(z_mean)
+    #getDiscMeanFeature(z_mean)
        
     sess.close()
 
