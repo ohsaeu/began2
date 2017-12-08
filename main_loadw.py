@@ -15,7 +15,7 @@ def loadWeight(sess, npz_path, npz_itr, ckpt_meta, target):
     e_params = np.load( npz_path+npz_itr+'net_e.npz' )['params']
        
     saver = tf.train.import_meta_graph(npz_path+ckpt_meta)
-    saver.restore(sess, tf.train.latest_checkpoint(npz_path))
+    #saver.restore(sess, tf.train.latest_checkpoint(npz_path))
     
     g_idx=0
     e_idx=0
