@@ -103,10 +103,7 @@ def main():
     measure = d_loss_x + tf.abs(balance)
 
     with tf.control_dependencies([d_optim, g_optim]):
-        if conf.load_target=='G':
-            k_update = tf.assign(k_t, 1)
-        else:
-            k_update = tf.assign(k_t,tf.clip_by_value(k_t + conf.lambda_k * balance, 0, 1))
+        k_update = tf.assign(k_t,tf.clip_by_value(k_t + conf.lambda_k * balance, 0, 1))
             
     summary_op = tf.summary.merge([
             tf.summary.image("G", g_img),
