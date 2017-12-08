@@ -232,7 +232,7 @@ def main():
                 
             n_step+=1
         
-        if epoch %500 ==0:    
+        if n_step % conf.n_save_ckpt_epoch ==0:    
             net_g_name = os.path.join(checkpoint_dir, str(n_step)+'_'+'net_g.npz')
             net_e_name = os.path.join(checkpoint_dir, str(n_step)+'_'+'net_e.npz')
             net_d_name = os.path.join(checkpoint_dir, str(n_step)+'_'+'net_d.npz')    

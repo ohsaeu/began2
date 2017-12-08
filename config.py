@@ -39,6 +39,7 @@ flags.add_argument("--n_img_pix", type=int, default=128)
 flags.add_argument("--n_img_out_pix", type=int, default=128)
 flags.add_argument("--n_save_log_step", type=int, default=1)
 flags.add_argument("--n_save_img_step", type=int, default=2)
+flags.add_argument("--n_save_ckpt_epoch", type=int, default=2)
 flags.add_argument("--n_buffer", type=int, default=1)
 
 flags.add_argument("--is_gray", type=str2bool, default=True)
