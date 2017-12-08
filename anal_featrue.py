@@ -97,7 +97,24 @@ def main():
             g_intp =sess.run(g_img,feed_dict={z:np.asarray(g_mnfd)})
             save_image(g_intp, os.path.join(checkpoint_dir, str(i)+'mnfd_anal_G.png'))
     
-
+    def manifoldD():
+        f_data = glob(os.path.join(conf.data_dir,conf.dataset, "*"))
+        shuffle(f_data)
+        f_batch = f_data[0:conf.n_batch]
+        x_test = [get_image(f, conf.n_img_pix, is_crop=conf.is_crop, resize_w=conf.n_img_out_pix, is_grayscale = conf.is_gray) for f in f_batch]
+        x_test = np.array(x_test).astype(np.float32)
+        if conf.is_gray :
+                s,h,w = x_test.shape
+                x_test = x_test.reshape(s, h, w, n_channel )
+        step =int(conf.n_batch/2)
+        for i in range(step):
+            d_mnfd = [None]*64
+            d_mnfd[0] = x_test[i]
+            d_mnfd[63] = x_test[i+step]
+            for j in range(1,63):
+                d_mnfd[j] = d_mnfd[0]+ ((d_mnfd[63] -d_mnfd[0])/63 *j)
+            d_intp =sess.run(d_img,feed_dict={g_net:d_mnfd})
+            save_image(d_intp, os.path.join(checkpoint_dir, str(i)+'mnfd_anal_D.png'))
     
     def extractRealFeatrue():
         f_data = glob(os.path.join(conf.data_dir,conf.dataset, "*"))
@@ -190,9 +207,10 @@ def main():
     
            
     #manifoldG()
+    manifoldD()
     #extractRealFeatrue()
     #generateGFeatrue()
-    doKmeans(doPCA(anal_dir+'xg_feature.csv',2)) #+'real_feature.csv'
+    #doKmeans(doPCA(anal_dir+'xg_feature.csv',2)) #+'real_feature.csv'
     #saveClusterImages()
        
     sess.close()
