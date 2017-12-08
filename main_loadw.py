@@ -138,7 +138,7 @@ def main():
 
     saver = tf.train.Saver()
 
-    loadWeight(sess, conf.log_dir, conf.npz_itr, conf.ckpt_meta, conf.load_target)
+    loadWeight(sess, conf.load_dir, conf.npz_itr, conf.ckpt_meta, conf.load_target)
 
     data_files = glob(os.path.join(conf.data_dir,conf.dataset, "*"))
     shuffle(data_files)
