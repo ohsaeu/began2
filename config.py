@@ -44,7 +44,7 @@ flags.add_argument("--n_buffer", type=int, default=1)
 
 flags.add_argument("--is_gray", type=str2bool, default=True)
 flags.add_argument("--is_train", type=str2bool, default=True)
-flags.add_argument("--is_crop", type=str2bool, default=False)
+flags.add_argument("--is_crop", type=str2bool, default=True)
 
 def get_config():
     config, unparsed = parser.parse_known_args()
