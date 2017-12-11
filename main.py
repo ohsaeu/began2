@@ -187,18 +187,22 @@ def main():
                 
             n_step+=1
         
-        if epoch %500 ==0:    
+        if epoch %conf.n_save_ckpt_epoch ==0: 
+            '''   
             net_g_name = os.path.join(checkpoint_dir, str(n_step)+'_'+'net_g.npz')
             net_e_name = os.path.join(checkpoint_dir, str(n_step)+'_'+'net_e.npz')
             net_d_name = os.path.join(checkpoint_dir, str(n_step)+'_'+'net_d.npz')    
             save_npz(g_vars, name=net_g_name, sess=sess)
             save_npz(enc_vars, name=net_e_name, sess=sess)
             save_npz(dec_vars, name=net_d_name, sess=sess)
-            saver.save(sess, checkpoint_dir+"/"+str(n_step)+"_"+"began2_model.ckpt")  
-    
+            '''
+            saver.save(sess, os.path.join(checkpoint_dir,str(n_step)+"_"+"began2_model.ckpt") ) 
+    '''
     net_g_name = os.path.join(checkpoint_dir, 'final_net_g.npz')
     net_e_name = os.path.join(checkpoint_dir, 'final_net_e.npz')
     net_d_name = os.path.join(checkpoint_dir, 'final_net_d.npz')          
+    '''
+    saver.save(sess, os.path.join(checkpoint_dir,"final_began2_model.ckpt"))
     
     cost_file.close()
     
