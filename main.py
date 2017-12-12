@@ -109,8 +109,8 @@ def main():
     if(conf.is_gray == 1):
         s,h,w = x_fix.shape
     else:
-        s,h,w,_ = x_fix.shape
-        x_fix = x_fix.reshape(s,h, w,n_channel )
+        s,h,w,c = x_fix.shape
+    x_fix = x_fix.reshape(s,h, w,n_channel )
 
     save_images(x_fix, [n_grid_row,n_grid_row],'{}/x_fix.png'.format(checkpoint_dir))
 
