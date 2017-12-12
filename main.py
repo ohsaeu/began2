@@ -106,11 +106,8 @@ def main():
     x_fix = data_files[0:conf.n_batch]
     x_fix=[get_image(f, conf.n_img_pix, is_crop=conf.is_crop, resize_w=conf.n_img_out_pix, is_grayscale = conf.is_gray) for f in x_fix]
     x_fix = np.array(x_fix).astype(np.float32)
-    if(conf.is_gray == 1):
-        s,h,w = x_fix.shape
-    else:
-        s,h,w,c = x_fix.shape
-    x_fix = x_fix.reshape(s,h, w,n_channel )
+
+    x_fix = x_fix.reshape(x_fix.shape[0],x_fix.shape[1], x_fix.shape[2],n_channel )
 
     save_images(x_fix, [n_grid_row,n_grid_row],'{}/x_fix.png'.format(checkpoint_dir))
 
