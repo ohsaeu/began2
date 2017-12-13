@@ -59,7 +59,7 @@ def main():
         else:
             g_net_diff+=tf.reduce_mean(tf.abs(g_net[0]-g_net[i]))
          
-    g_loss = tf.reduce_mean(tf.abs(d_g_net - g_net))- (g_net_diff/conf.n_batch)
+    g_loss = tf.reduce_mean(tf.abs(d_g_net - g_net))- conf.gamma*(g_net_diff/conf.n_batch)
 
     g_optim = tf.train.AdamOptimizer(conf.g_lr).minimize(g_loss, var_list=g_vars)
     d_optim = tf.train.AdamOptimizer(conf.d_lr).minimize(d_loss, var_list=d_vars)
