@@ -41,6 +41,11 @@ def main():
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
+    #saver = tf.train.import_meta_graph(npz_path+'began2_model.ckpt.meta')
+    #saver.restore(sess, tf.train.latest_checkpoint(npz_path))
+    saver = tf.train.Saver()
+    saver.restore(sess, os.path.join(conf.load_dir, conf.ckpt_nm))
+    '''
     # load and fetch variables
     npz_path =conf.log_dir
     itr ='222111_'
@@ -49,8 +54,7 @@ def main():
     d_params = np.load( npz_path+itr+'net_d.npz' )['params']
     e_params = np.load( npz_path+itr+'net_e.npz' )['params']
        
-    saver = tf.train.import_meta_graph(npz_path+'began2_model.ckpt.meta')
-    saver.restore(sess, tf.train.latest_checkpoint(npz_path))
+    
     
     #col = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
     
@@ -80,7 +84,7 @@ def main():
                     sess.run(ref1)
                     d_idx+=1
                     
-    
+    '''
     #load real image 
     data_files = glob(os.path.join(conf.data_dir,conf.dataset, "*"))
     shuffle(data_files)
@@ -124,7 +128,7 @@ def main():
             to = 64*(i+1)
             z_test =l_z[fr:to]
             g_im =sess.run(g_img,feed_dict={z:z_test})  
-            save_images(g_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, itr+str(i)+'_anal_fix_G.png'))
+            save_images(g_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, '_anal_fix_G.png'))
             #g_im = g_im/127.5 - 1.
             #ae_g_im =sess.run(d_img,feed_dict={g_net:g_im})  
             #save_images(ae_g_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, str(i)+'_anal_AE_G.png'))
@@ -197,11 +201,11 @@ def main():
         d_mnfd =sess.run(d_img,feed_dict={e_net:m_net})                       
         save_images(d_mnfd, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, 'anal_D_Mean_df.png'))    
     
-    getFixedG(conf.log_dir+'anal/g_df/z.csv')
+    #getFixedG(conf.log_dir+'anal/g_df/z.csv')
     
-    #getRealAR()
-    #getRandomG()
-    #getRandomAE()
+    getRealAR()
+    getRandomG()
+    getRandomAE()
            
     #saveFeatures()
     #z_mean, z_std = getFeatures()
