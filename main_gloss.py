@@ -206,7 +206,7 @@ def main():
             save_npz(enc_vars, name=net_e_name, sess=sess)
             save_npz(dec_vars, name=net_d_name, sess=sess)
             '''
-            saver.save(sess, os.path.join(checkpoint_dir,str(n_step)+"_"+"began2_model.ckpt") ) 
+            saver.save(sess, os.path.join(checkpoint_dir,str(epoch)+"_"+"began2_model.ckpt") ) 
     '''
     net_g_name = os.path.join(checkpoint_dir, 'final_net_g.npz')
     net_e_name = os.path.join(checkpoint_dir, 'final_net_e.npz')
