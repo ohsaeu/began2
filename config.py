@@ -26,6 +26,7 @@ flags.add_argument("--ckpt_meta", type=str, default= "began2_model.ckpt.meta")
 flags.add_argument("--load_target", type=str, default= "G")
 
 flags.add_argument('--gamma', type=float, default=0.5)
+flags.add_argument('--delta', type=float, default=0.2)
 flags.add_argument('--lambda_k', type=float, default=0.001)
 flags.add_argument('--d_lr', type=float, default=0.00008)
 flags.add_argument('--g_lr', type=float, default=0.00008)
