@@ -168,7 +168,6 @@ def main():
 
                 gloss = result['gloss']
                 dloss = result['dloss']
-                glossd = result['gnetdiff']
                 dlossx = result['dlossx']
                 kt = result['kt']
 
