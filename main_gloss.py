@@ -58,8 +58,9 @@ def main():
             g_net_diff+=tf.reduce_mean(tf.abs(g_net[i]-g_net[i+1]))
         else:
             g_net_diff+=tf.reduce_mean(tf.abs(g_net[0]-g_net[i]))
-         
-    g_loss = tf.reduce_mean(tf.abs(d_g_net - g_net))- conf.delta*(g_net_diff/conf.n_batch)
+    g_loss_diff= conf.delta*(g_net_diff/conf.n_batch) 
+    g_loss_net =tf.reduce_mean(tf.abs(d_g_net - g_net))    
+    g_loss = g_loss_net - tf.clip_by_value(g_loss_diff,0 ,g_loss_net*0.9 )
 
     g_optim = tf.train.AdamOptimizer(conf.g_lr).minimize(g_loss, var_list=g_vars)
     d_optim = tf.train.AdamOptimizer(conf.d_lr).minimize(d_loss, var_list=d_vars)
@@ -78,8 +79,8 @@ def main():
             tf.summary.scalar("loss/d_loss_real", d_loss_x),
             tf.summary.scalar("loss/d_loss_fake", d_loss_g),
             tf.summary.scalar("loss/gloss", g_loss),
-            tf.summary.scalar("loss/glossdiff", g_net_diff),
-            #tf.summary.scalar("pd/pd_fake", g_logits),
+            tf.summary.scalar("loss/glossnet", g_loss_net),
+            tf.summary.scalar("loss/glossdiff", g_loss_diff),
             tf.summary.scalar("misc/m", measure),
             tf.summary.scalar("misc/kt", k_t),
             tf.summary.scalar("misc/balance", balance),
@@ -161,7 +162,8 @@ def main():
                     "summary": summary_op,
                     "gloss": g_loss,
                     "dloss": d_loss,
-                    "gnetdiff":g_net_diff, 
+                    "glossnet" : g_loss_net,
+                    "glossdiff":g_loss_diff, 
                     "dlossx":d_loss_x,
                     "kt": k_t,
                 })
@@ -176,7 +178,8 @@ def main():
 
                 gloss = result['gloss']
                 dloss = result['dloss']
-                glossd = result['gnetdiff']
+                glossn = result['glossnet']
+                glossd = result['glossdiff']
                 dlossx = result['dlossx']
                 kt = result['kt']
 
