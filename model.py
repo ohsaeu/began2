@@ -25,6 +25,32 @@ def generate(z, n_img_pix, n_conv_hidden, n_channel,  is_train=True, reuse=False
     g_vars = tf.contrib.framework.get_variables(gen)
     return out, g_vars
 
+def generateLatent(z, n_img_pix, n_conv_hidden, n_channel,  is_train=False, reuse=False):
+    
+    n_repeat = 4#int(np.log2(n_img_pix)) - 2
+    #w_init = tf.random_normal_initializer(stddev=0.02)
+    #gamma_init = tf.random_normal_initializer(1., 0.02)   
+     
+    with tf.variable_scope("latent_generator", reuse=reuse) as gen:
+        n_output = int(np.prod([8, 8, n_conv_hidden]))
+        x = layers.fully_connected(z, n_output, activation_fn=None)
+        x = tf.reshape(x, [z.shape[0].value, 8, 8, n_conv_hidden])
+        #tf.nn.batchnormal
+        for idx in range(n_repeat):
+            x = layers.conv2d(x, n_conv_hidden, 3, 1, activation_fn=tf.nn.elu)
+            x = layers.conv2d(x, n_conv_hidden, 3, 1, activation_fn=tf.nn.elu)
+            if idx < n_repeat - 1:
+                _,h,w,_ = x.shape
+                x = tf.image.resize_nearest_neighbor(x, (h.value*2, w.value*2))
+
+        x = layers.conv2d(x, n_channel, 3, 1, activation_fn=None)
+        x= layers.flatten(x)
+        x = layers.fully_connected(x, 8*8*25, activation_fn=None)
+        out = layers.fully_connected(x, 64, activation_fn=None)
+        #logits = tf.nn.tanh(out)
+    g_vars = tf.contrib.framework.get_variables(gen)
+    return out, g_vars,x
+
 
 def encode(x, n_z, n_img_pix, n_conv_hidden, is_train=True, reuse=False):
     
@@ -44,7 +70,7 @@ def encode(x, n_z, n_img_pix, n_conv_hidden, is_train=True, reuse=False):
         out = layers.fully_connected(x, n_z, activation_fn=None)
         #logits = tf.nn.sigmoid(out)
     e_vars = tf.contrib.framework.get_variables(enc)
-    return out, e_vars    
+    return out, e_vars ,x  
 
 
 def decode(x, n_z, n_img_pix, n_conv_hidden, n_channel,  is_train=True, reuse=False):

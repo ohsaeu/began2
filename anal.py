@@ -104,15 +104,22 @@ def main():
     
     def getRandomG():
      
+        f_g = open(checkpoint_dir+ '/g_img.csv', 'a')
+        
         # generate images from generator and ae
         for i in range(3):
             z_test =np.random.uniform(low=-1, high=1, size=(conf.n_batch, 64)).astype(np.float32)
             g_im =sess.run(g_img,feed_dict={z:z_test})  
             save_images(g_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, str(i)+'_anal_G.png'))
-            g_im = g_im/127.5 - 1.
-            ae_g_im =sess.run(d_img,feed_dict={g_net:g_im})  
-            save_images(ae_g_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, str(i)+'_anal_AE_G.png'))
-    
+        #    g_im = g_im/127.5 - 1.
+        #    ae_g_im =sess.run(d_img,feed_dict={g_net:g_im})  
+        #    save_images(ae_g_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, str(i)+'_anal_AE_G.png'))
+            
+        
+            for j in range(g_im.shape[0]):
+                f_g.write(str(g_im[j].tolist()).replace("[", "").replace("]", "")+ '\n')
+        f_g.close()
+        
     def getFixedG(f_in):
         l_z = list()
         with open(f_in,'r') as file:    
@@ -203,9 +210,9 @@ def main():
     
     #getFixedG(conf.log_dir+'anal/g_df/z.csv')
     
-    getRealAR()
+    #getRealAR()
     getRandomG()
-    getRandomAE()
+    #getRandomAE()
            
     #saveFeatures()
     #z_mean, z_std = getFeatures()

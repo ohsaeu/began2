@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 from glob import glob
 from random import shuffle
-from model import generate, encode, decode
+from model import generate, encode, decode, generateLatent
 from utils import save_images, save_image, save_npz, get_image
 from config import get_config
 pp = pprint.PrettyPrinter()
@@ -24,58 +24,26 @@ def main():
                 (conf.n_batch, conf.n_z), minval=-1.0, maxval=1.0)
     x_net =  tf.placeholder(tf.float32, [conf.n_batch, conf.n_img_pix, conf.n_img_pix, n_channel], name='real_images')
     k_t = tf.Variable(0., trainable=False, name='k_t')
+    
+    e_out_net, enc_vars, e_x_net = encode(x_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=False, reuse=False)
+    d_x_net, dec_vars = decode(e_x_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=False, reuse=False)
+    
+    g_out_net, g_vars, g_x_net = generateLatent(z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel,  is_train=True, reuse=False)
+    d_g_net, _ = decode(g_x_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=False, reuse=True)
 
-    # execute generator
-    g_net, g_vars = generate(z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel,  is_train=True, reuse=False)
-        
-    # execute discriminator
-    e_g_net, enc_vars = encode(g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=True, reuse=False)
-    d_g_net, dec_vars = decode(e_g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=True, reuse=False)
-    
-    e_x_net, _ = encode(x_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=True, reuse=True)
-    d_x_net, _ = decode(e_x_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=True, reuse=True)
-    
-    g_img=tf.clip_by_value((g_net + 1)*127.5, 0, 255)
-    #x_img=tf.clip_by_value((x_net + 1)*127.5, 0, 255)
     d_g_img=tf.clip_by_value((d_g_net + 1)*127.5, 0, 255)
     d_x_img=tf.clip_by_value((d_x_net + 1)*127.5, 0, 255)
     
-    d_vars = enc_vars + dec_vars
-    
-    #d_x_img = tf.clip_by_value((d_x_net + 1)*127.5, 0, 255)
-    #d_loss_g = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=net_d_g, labels=tf.zeros_like(net_d_g)),name='d_loss_fake')
-    #d_loss_x = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=net_d_x, labels=tf.ones_like(net_d_x)),name='d_loss_real')
-    #d_loss = d_loss_g + d_loss_x
-    #g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=net_g, labels=tf.ones_like(net_g)),name='g_loss')
+    #d_vars = enc_vars + dec_vars
 
-    d_loss_g = tf.reduce_mean(tf.abs(d_g_net - g_net))
-    d_loss_x = tf.reduce_mean(tf.abs(d_x_net - x_net))
-    d_loss= d_loss_x - k_t * d_loss_g
+    g_loss = tf.reduce_mean(tf.abs(g_out_net - e_out_net))
 
-    g_loss = tf.reduce_mean(tf.abs(d_g_net - g_net))
-
-    g_optim = tf.train.AdamOptimizer(conf.g_lr).minimize(g_loss, var_list=g_vars)
-    d_optim = tf.train.AdamOptimizer(conf.d_lr).minimize(d_loss, var_list=d_vars)
-
-    balance = conf.gamma * d_loss_x - g_loss
-    measure = d_loss_x + tf.abs(balance)
-
-    with tf.control_dependencies([d_optim, g_optim]):
-        k_update = tf.assign(k_t, tf.clip_by_value(k_t + conf.lambda_k * balance, 0, 1))
+    g_optim = tf.train.AdamOptimizer(conf.d_lr).minimize(g_loss, var_list=g_vars)
 
     summary_op = tf.summary.merge([
-            tf.summary.image("G", g_img),
             tf.summary.image("AE_G", d_g_img),
             tf.summary.image("AE_x", d_x_img),
-            tf.summary.scalar("loss/dloss", d_loss),
-            tf.summary.scalar("loss/d_loss_real", d_loss_x),
-            tf.summary.scalar("loss/d_loss_fake", d_loss_g),
             tf.summary.scalar("loss/gloss", g_loss),
-            #tf.summary.scalar("pd/pd_real", x_logits),
-            #tf.summary.scalar("pd/pd_fake", g_logits),
-            tf.summary.scalar("misc/m", measure),
-            tf.summary.scalar("misc/kt", k_t),
-            tf.summary.scalar("misc/balance", balance),
         ])
 
     # start session
@@ -91,9 +59,11 @@ def main():
     # init summary writer for tensorboard
     summary_writer = tf.summary.FileWriter(checkpoint_dir,sess.graph)
 
-    saver = tf.train.Saver()
-
-
+    try:
+        saver = tf.train.Saver()
+        saver.restore(sess, os.path.join(conf.load_dir, conf.ckpt_nm))
+    except:
+        pass
 
     data_files = glob(os.path.join(conf.data_dir,conf.dataset, "*"))
     shuffle(data_files)
@@ -143,50 +113,40 @@ def main():
                 
             
             #z_batch = np.random.normal(loc=0.0, scale=1.0, size=(conf.sample_size, conf.z_dim)).astype(np.float32)
-            #z_batch = np.random.uniform(low=-1, high=1, size=(conf.n_batch, conf.n_z)).astype(np.float32)
+            z_batch = np.random.uniform(low=-1, high=1, size=(conf.n_batch, conf.n_z)).astype(np.float32)
 
             fetch_dict = {
-                "kupdate": k_update,
-                "m": measure,
+                "gopt":g_optim,
+                "gloss": g_loss, 
             }
             if n_step % conf.n_save_log_step == 0:
                 fetch_dict.update({
                     "summary": summary_op,
-                    "gloss": g_loss,
-                    "dloss": d_loss,
-                    "kt": k_t,
                 })
 
             start_time = time.time()
-            result = sess.run(fetch_dict, feed_dict={x_net:img_batch})
-            m = result['m']
+            result = sess.run(fetch_dict, feed_dict={z:z_batch,x_net:img_batch})
 
             if n_step % conf.n_save_log_step == 0:
                 summary_writer.add_summary(result['summary'], n_step)
                 summary_writer.flush()
 
                 gloss = result['gloss']
-                dloss = result['dloss']
-                kt = result['kt']
 
-                cost_file.write("Epoch: ["+str(epoch)+"/"+str(conf.n_epoch)+"] ["+str(idx)+"/"+str(n_iters)+"] time: "+str(time.time() - start_time)+", d_loss: "+str(dloss)+", g_loss:"+ str(gloss)+" measure: "+str(m)+", k_t: "+ str(kt)+ "\n")
+                cost_file.write("Epoch: ["+str(epoch)+"/"+str(conf.n_epoch)+"] ["+str(idx)+"/"+str(n_iters)+"] time: "+str(time.time() - start_time)+", g_loss: "+str(gloss)+ "\n")
 
 
             if n_step % conf.n_save_img_step == 0:
                 #g_sample = sess.run(g_img, feed_dict={z: z_fix})
-                g_sample, g_ae, x_ae = sess.run([g_img, d_g_img,d_x_img] ,feed_dict={x_net: x_fix})
+                g_ae, x_ae = sess.run([d_g_img,d_x_img] ,feed_dict={z:z_batch,x_net: img_batch})
 
-                save_image(g_sample,os.path.join(checkpoint_dir, '{}_G.png'.format(n_step)))
                 save_image(g_ae, os.path.join(checkpoint_dir,  '{}_AE_G.png'.format(n_step)))
                 save_image(x_ae, os.path.join(checkpoint_dir, '{}_AE_X.png'.format(n_step)))
-                
-                #save_images(g_sample,[n_grid_row,n_grid_row], os.path.join(checkpoint_dir, '{}_G.png'.format(n_step)))
-                #save_images(g_ae, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir,  '{}_AE_G.png'.format(n_step)))
-                #save_images(x_ae, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, '{}_AE_X.png'.format(n_step)))    
+                saver.save(sess, os.path.join(checkpoint_dir,"temp_gltnt_began2_model.ckpt") )
                 
             n_step+=1
         
-        if n_step %conf.n_save_ckpt_step ==0: 
+        if epoch %conf.n_save_ckpt_epoch ==0: 
             '''   
             net_g_name = os.path.join(checkpoint_dir, str(n_step)+'_'+'net_g.npz')
             net_e_name = os.path.join(checkpoint_dir, str(n_step)+'_'+'net_e.npz')
@@ -195,13 +155,13 @@ def main():
             save_npz(enc_vars, name=net_e_name, sess=sess)
             save_npz(dec_vars, name=net_d_name, sess=sess)
             '''
-            saver.save(sess, os.path.join(checkpoint_dir,str(epoch)+"_"+"began2_model.ckpt") ) 
+            saver.save(sess, os.path.join(checkpoint_dir,str(n_step)+"_"+"began2_model.ckpt") ) 
     '''
     net_g_name = os.path.join(checkpoint_dir, 'final_net_g.npz')
     net_e_name = os.path.join(checkpoint_dir, 'final_net_e.npz')
     net_d_name = os.path.join(checkpoint_dir, 'final_net_d.npz')          
     '''
-    saver.save(sess, os.path.join(checkpoint_dir,"final_began2_model.ckpt"))
+    saver.save(sess, os.path.join(checkpoint_dir,"final_gltnt_began2_model.ckpt"))
     
     cost_file.close()
     
