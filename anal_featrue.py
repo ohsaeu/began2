@@ -29,7 +29,7 @@ def main():
     # execute generator
     g_net,_ = generate(z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=False, reuse=False) 
     # execute discriminator
-    e_net,_ = encode(g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=False, reuse=False)
+    e_net,_, _ = encode(g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=False, reuse=False)
     d_net,_ = decode(e_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel,is_train=False, reuse=False)
    
     g_img=tf.clip_by_value((g_net + 1)*127.5, 0, 255)
@@ -45,6 +45,7 @@ def main():
         os.makedirs(checkpoint_dir)
 
     # load and fetch variables
+    '''
     npz_path =conf.log_dir
     itr ='222111_'
     
@@ -83,6 +84,9 @@ def main():
                     ref1=tf.assign(ref,d_params[d_idx])
                     sess.run(ref1)
                     d_idx+=1
+    '''
+    saver = tf.train.Saver()
+    saver.restore(sess, os.path.join(conf.load_dir, conf.ckpt_nm))
                     
     def manifoldG():
         z_test =np.random.uniform(low=-1, high=1, size=(conf.n_batch, 64)).astype(np.float32)
@@ -206,8 +210,8 @@ def main():
                 save_image(c_img, anal_dir+'/'+str(i)+'_cluster_'+ str(j)+'.jpg')
     
            
-    #manifoldG()
-    manifoldD()
+    manifoldG()
+    #manifoldD()
     #extractRealFeatrue()
     #generateGFeatrue()
     #doKmeans(doPCA(anal_dir+'xg_feature.csv',2)) #+'real_feature.csv'
