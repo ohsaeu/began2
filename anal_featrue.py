@@ -43,7 +43,8 @@ def main():
     checkpoint_dir = os.path.join(conf.log_dir,conf.curr_time)
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
-
+        
+    anal_dir=conf.log_dir+'anal/g_df/'
     # load and fetch variables
     '''
     npz_path =conf.log_dir
@@ -90,17 +91,41 @@ def main():
                     
     def manifoldG():
         z_test =np.random.uniform(low=-1, high=1, size=(conf.n_batch, 64)).astype(np.float32)
-        #g_im =sess.run(g_img,feed_dict={z:z_test})
+        
         step =int(len(z_test)/2) 
         for i in range(step):
             g_mnfd = [None]*64
-            g_mnfd[0] = z_test[0]
+            g_mnfd[0] = z_test[i]
             g_mnfd[63] = z_test[i+step]
             for j in range(1,63):
                 g_mnfd[j] = g_mnfd[0]+ ((g_mnfd[63] -g_mnfd[0])/63 *j)
-            g_intp =sess.run(g_img,feed_dict={z:np.asarray(g_mnfd)})
+            g_mnfd= np.asarray(g_mnfd)    
+            g_intp =sess.run(g_img,feed_dict={z:g_mnfd})
             save_image(g_intp, os.path.join(checkpoint_dir, str(i)+'mnfd_anal_G.png'))
-    
+            
+            f_g = open(checkpoint_dir+ '/g_mnfd.csv', 'a')
+            for j in range(g_mnfd.shape[0]):
+                f_g.write(str(g_mnfd[j].tolist()).replace("[", "").replace("]", "")+ '\n')
+            f_g.close()
+            
+    def loadG(f_in):
+        l_z = list()
+        with open(f_in,'r') as file:    
+            for line in file:
+               l_z.append(np.fromstring(line, dtype=float, sep=','))
+        file.close()
+        
+        idx = 110
+        l_z = np.asarray(l_z)
+        g_mnfd = [None]*64
+        g_mnfd[0] = l_z[idx]
+        g_mnfd[63] = l_z[idx+1]
+        for j in range(1,63):
+            g_mnfd[j] = g_mnfd[0]+ ((g_mnfd[63] -g_mnfd[0])/63 *j)
+        g_mnfd= np.asarray(g_mnfd)    
+        g_intp =sess.run(g_img,feed_dict={z:g_mnfd})
+        save_image(g_intp, os.path.join(checkpoint_dir, str(idx)+'_detail_mnfd_anal_G.png'))
+                   
     def manifoldD():
         f_data = glob(os.path.join(conf.data_dir,conf.dataset, "*"))
         shuffle(f_data)
@@ -209,7 +234,7 @@ def main():
                 c_img =sess.run(d_img,feed_dict={e_net:c_net})
                 save_image(c_img, anal_dir+'/'+str(i)+'_cluster_'+ str(j)+'.jpg')
     
-           
+    #loadG('C:/samples/img_download/celebA/output/2000_07_17-12-12-09-32/anal_17-12-28-10-16/g_mnfd.csv')       
     manifoldG()
     #manifoldD()
     #extractRealFeatrue()

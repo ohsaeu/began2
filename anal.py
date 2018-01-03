@@ -26,7 +26,7 @@ def main():
     # execute generator
     g_net,_ = generate(z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=False, reuse=False) 
     # execute discriminator
-    e_net,_ = encode(g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=False, reuse=False)
+    e_net,_, _ = encode(g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=False, reuse=False)
     d_net,_ = decode(e_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel,is_train=False, reuse=False)
    
     g_img=tf.clip_by_value((g_net + 1)*127.5, 0, 255)
@@ -107,7 +107,7 @@ def main():
         f_g = open(checkpoint_dir+ '/g_img.csv', 'a')
         
         # generate images from generator and ae
-        for i in range(3):
+        for i in range(10):
             z_test =np.random.uniform(low=-1, high=1, size=(conf.n_batch, 64)).astype(np.float32)
             g_im =sess.run(g_img,feed_dict={z:z_test})  
             save_images(g_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, str(i)+'_anal_G.png'))
