@@ -1,6 +1,8 @@
 import os, pprint, time
 import numpy as np
 import tensorflow as tf
+import logging 
+import logging.handlers
 from glob import glob
 from random import shuffle
 from model import generate, encode, decode
@@ -88,6 +90,11 @@ def main():
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
+    logger = logging.getLogger("log") 
+    logger.setLevel(logging.INFO)
+    fileHandler = logging.FileHandler(os.path.join(checkpoint_dir,  'log.txt')) 
+    logger.addHandler(fileHandler)  
+    
     # init summary writer for tensorboard
     summary_writer = tf.summary.FileWriter(checkpoint_dir,sess.graph)
 
@@ -111,8 +118,9 @@ def main():
 
     save_images(x_fix, [n_grid_row,n_grid_row],'{}/x_fix.png'.format(checkpoint_dir))
 
-    cost_file = open(checkpoint_dir+ "/cost.txt", 'w', conf.n_buffer)
+    #cost_file = open(checkpoint_dir+ "/cost.txt", 'w', conf.n_buffer)
     n_step=0
+    prev_gloss = 0
     for epoch in range(conf.n_epoch):
         ## shuffle data
         shuffle(data_files)
@@ -147,29 +155,36 @@ def main():
 
             fetch_dict = {
                 "kupdate": k_update,
+                "gloss": g_loss,
+                "dloss": d_loss,
                 "m": measure,
             }
             if n_step % conf.n_save_log_step == 0:
                 fetch_dict.update({
                     "summary": summary_op,
-                    "gloss": g_loss,
-                    "dloss": d_loss,
                     "kt": k_t,
                 })
 
+
+        
             start_time = time.time()
             result = sess.run(fetch_dict, feed_dict={x_net:img_batch})
             m = result['m']
-
+            
+            gloss = result['gloss']
+            dloss = result['dloss']
+            
+            if(epoch > 9 and gloss > prev_gloss*2):
+                logger.critical('back to the latest ckpt')
+            
             if n_step % conf.n_save_log_step == 0:
                 summary_writer.add_summary(result['summary'], n_step)
                 summary_writer.flush()
 
-                gloss = result['gloss']
-                dloss = result['dloss']
+
                 kt = result['kt']
 
-                cost_file.write("Epoch: ["+str(epoch)+"/"+str(conf.n_epoch)+"] ["+str(idx)+"/"+str(n_iters)+"] time: "+str(time.time() - start_time)+", d_loss: "+str(dloss)+", g_loss:"+ str(gloss)+" measure: "+str(m)+", k_t: "+ str(kt)+ "\n")
+                logger.info("Epoch: ["+str(epoch)+"/"+str(conf.n_epoch)+"] ["+str(idx)+"/"+str(n_iters)+"] time: "+str(time.time() - start_time)+", d_loss: "+str(dloss)+", g_loss:"+ str(gloss)+" measure: "+str(m)+", k_t: "+ str(kt)+ "\n")
 
 
             if n_step % conf.n_save_img_step == 0:
@@ -185,6 +200,7 @@ def main():
                 #save_images(x_ae, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, '{}_AE_X.png'.format(n_step)))    
                 
             n_step+=1
+            prev_gloss=gloss
         
         if n_step %conf.n_save_ckpt_step ==0: 
             '''   
@@ -203,7 +219,7 @@ def main():
     '''
     saver.save(sess, os.path.join(checkpoint_dir,"final_began2_model.ckpt"))
     
-    cost_file.close()
+    #cost_file.close()
     
     sess.close()
 

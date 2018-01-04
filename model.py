@@ -88,7 +88,8 @@ def decode(x, n_z, n_img_pix, n_conv_hidden, n_channel,  is_train=True, reuse=Fa
             if idx < n_repeat - 1:
                 _,h,w,_ = x.shape
                 x = tf.image.resize_nearest_neighbor(x, (h.value*2, w.value*2))
-
+                
+        x = layers.dropout(x, 0.7)        
         out = layers.conv2d(x, n_channel, 3, 1, activation_fn=None)
         #logits = tf.nn.tanh(out)
         

@@ -17,7 +17,7 @@ def main():
     pp.pprint(conf)
     if conf.is_gray :
         n_channel=1
-    else:
+    else:      
         n_channel=3
     
     n_grid_row = int(np.sqrt(conf.n_batch))
