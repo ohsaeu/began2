@@ -17,12 +17,12 @@ def add_argument_group(name):
 flags = add_argument_group('Flags')
 flags.add_argument("--dataset", type=str, default= "128_gray")
 flags.add_argument("--data_dir", type=str, default="C:/samples/img_download/wheels/data3/img/")
-flags.add_argument("--log_dir", type=str, default="C:/samples/img_download/wheels/data3/output/18-01-03-17-28/")
-flags.add_argument("--load_dir", type=str, default="C:/samples/img_download/wheels/data3/output/18-01-03-17-28/")
+flags.add_argument("--log_dir", type=str, default="C:/samples/img_download/wheels/data3/output/18-01-04-17-18/")
+flags.add_argument("--load_dir", type=str, default="C:/samples/img_download/wheels/data3/output/18-01-04-17-18/")
 flags.add_argument("--curr_time", type=str, default=datetime.datetime.now().strftime("%y-%m-%d-%H-%M"))
 flags.add_argument("--checkpoint_dir", type=str, default= "checkpoint")
 flags.add_argument("--npz_itr", type=str, default= "222111_")
-flags.add_argument("--ckpt_nm", type=str, default= "21_46024_began2_model.ckpt")
+flags.add_argument("--ckpt_nm", type=str, default= "final_began2_model.ckpt")
 flags.add_argument("--load_target", type=str, default= "G")
 
 flags.add_argument('--gamma', type=float, default=0.7)
@@ -45,6 +45,7 @@ flags.add_argument("--n_save_ckpt_step", type=int, default=2)
 flags.add_argument("--n_buffer", type=int, default=1)
 
 flags.add_argument("--is_gray", type=str2bool, default=True)
+flags.add_argument("--is_reload", type=str2bool, default=False)
 flags.add_argument("--is_train", type=str2bool, default=True)
 flags.add_argument("--is_crop", type=str2bool, default=True)
 

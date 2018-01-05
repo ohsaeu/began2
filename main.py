@@ -92,7 +92,8 @@ def main():
     summary_writer = tf.summary.FileWriter(checkpoint_dir,sess.graph)
 
     saver = tf.train.Saver()
-
+    if(conf.is_reload):
+        saver.restore(sess, os.path.join(conf.load_dir, conf.ckpt_nm))
 
 
     data_files = glob(os.path.join(conf.data_dir,conf.dataset, "*"))
