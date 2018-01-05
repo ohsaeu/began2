@@ -135,7 +135,7 @@ def main():
             dloss = result['dloss']
             
             # check dloss/gloss jump
-            if((epoch > 9) and ((gloss > prev_gloss*conf.skip_ratio) or (dloss > prev_dloss*conf.skip_ratio))):
+            if((epoch > conf.skip_epoch) and ((gloss > prev_gloss*conf.skip_ratio) or (dloss > prev_dloss*conf.skip_ratio))):
                 n_jump+=1
                 logger.critical('skip this iteration ----  Epoch: '+str(epoch)+ ", itr: "+str(idx)+", d_loss: "+str(dloss)+", g_loss:"+ str(gloss)+ "\n")
                 
