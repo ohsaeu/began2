@@ -107,6 +107,7 @@ def main():
     n_step=0
     prev_gloss = 0
     prev_dloss = 0
+    n_jump=0
     for epoch in range(conf.n_epoch):
         ## shuffle data
         shuffle(data_files)
@@ -135,12 +136,17 @@ def main():
             
             # check dloss/gloss jump
             if(epoch > 9 and (gloss > prev_gloss*conf.skip_ratio) or (dloss > prev_dloss*conf.skip_ratio)):
+                n_jump+=1
                 logger.critical('skip this iteration ----  Epoch: '+str(epoch)+ ", itr: "+str(idx)+", d_loss: "+str(dloss)+", g_loss:"+ str(gloss)+ "\n")
                 
-                g_sample, x_ae = sess.run([g_img,d_x_img] ,feed_dict={x_net: x_fix})
-                save_image(g_sample,os.path.join(checkpoint_dir, 'break_{}_G.png'.format(n_step)))
-                save_image(x_ae, os.path.join(checkpoint_dir, 'break_{}_AE_X.png'.format(n_step)))
-                continue
+                if(n_jump>20):
+                    break
+                else:
+                    n_jump=0
+                    g_sample, x_ae = sess.run([g_img,d_x_img] ,feed_dict={x_net: x_fix})
+                    save_image(g_sample,os.path.join(checkpoint_dir, 'break_{}_G.png'.format(n_step)))
+                    save_image(x_ae, os.path.join(checkpoint_dir, 'break_{}_AE_X.png'.format(n_step)))
+                    continue
                 
             fetch_dict = {
                 "kupdate": k_update,
