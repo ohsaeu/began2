@@ -30,6 +30,7 @@ flags.add_argument('--delta', type=float, default=0.2)
 flags.add_argument('--lambda_k', type=float, default=0.001)
 flags.add_argument('--d_lr', type=float, default=0.00008)
 flags.add_argument('--g_lr', type=float, default=0.00008)
+flags.add_argument('--skip_ratio', type=float, default=1.8)
 
 flags.add_argument('--n_conv_hidden', type=int, default=128,choices=[64, 128],help='n in the paper')
 flags.add_argument("--n_epoch", type=int, default=25)
