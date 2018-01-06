@@ -44,7 +44,7 @@ def main():
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
         
-    anal_dir=conf.log_dir+'anal/g_df/'
+    anal_dir=conf.log_dir+'anal/x_feature_set/'
     # load and fetch variables
     '''
     npz_path =conf.log_dir
@@ -198,25 +198,26 @@ def main():
 
         l_p = PCA(n_components=n_components).fit(l_x)
         return l_p.transform(l_x) 
-    
-    def doKmeans(l_x):  
+ 
+   
+    def doKmeans(l_x, n_neighbors):  
          
         kmeans = KMeans(init='k-means++', n_clusters=n_neighbors, n_init=10)
         kmeans.fit(l_x)
         n_idx=1
         f_km = open(anal_dir+'/'+str(n_neighbors)+'_AllKmeans.csv','w')
         for i in range(l_x.shape[0]):
-            arr = np.concatenate((l_x[i],[i+1], [kmeans.labels_[i]]))     
-            f_km.write(str(arr[0])+','+ str(arr[1])+ ','+str(arr[ 2])+ ','+str(arr[3])+','+str(n_idx)  +'\n')
+            arr = np.concatenate((l_x[i], [kmeans.labels_[i]]))     
+            f_km.write(str(arr[0])+','+ str(arr[1])+ ','+str(arr[2])+','+str(n_idx)  +'\n')
             n_idx+=1
         f_km.close()    
         
 
-    def saveClusterImages():
-        df_km = pd.read_csv(anal_dir+'/'+str(n_neighbors)+'_Kmeans.csv')
-        df_x = pd.read_csv(anal_dir+'/g_feature.csv')
+    def saveClusterImages(n_neighbors):
+        df_km = pd.read_csv(anal_dir+str(n_neighbors)+'_AllKmeans.csv')
+        df_x = pd.read_csv(anal_dir+'x_feature.csv')
         for i in range(n_neighbors):
-            x_cluster =df_x.ix[df_km.iloc[:,3] == i]
+            x_cluster =df_x.ix[df_km.iloc[:,2] == i]
             x_pix = x_cluster.iloc[:, 2:]
             x_pix = np.asarray(x_pix)
             
@@ -232,15 +233,15 @@ def main():
                 else:
                     c_net = x_pix[fr:to, :]
                 c_img =sess.run(d_img,feed_dict={e_net:c_net})
-                save_image(c_img, anal_dir+'/'+str(i)+'_cluster_'+ str(j)+'.jpg')
+                save_image(c_img, anal_dir+str(i)+'_cluster_'+ str(j)+'.jpg')
     
     #loadG('C:/samples/img_download/celebA/output/2000_07_17-12-12-09-32/anal_17-12-28-10-16/g_mnfd.csv')       
-    manifoldG()
+    #manifoldG()
     #manifoldD()
     #extractRealFeatrue()
     #generateGFeatrue()
-    #doKmeans(doPCA(anal_dir+'xg_feature.csv',2)) #+'real_feature.csv'
-    #saveClusterImages()
+    #doKmeans(doPCA(anal_dir+'x_feature.csv',2),8) #+'real_feature.csv'
+    saveClusterImages(8)
        
     sess.close()
 
