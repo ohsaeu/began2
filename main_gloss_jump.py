@@ -159,7 +159,7 @@ def main():
                     g_sample, x_ae = sess.run([g_img,d_x_img] ,feed_dict={x_net: x_fix})
                     save_image(g_sample,os.path.join(checkpoint_dir, 'break_{}_G.png'.format(n_step)))
                     save_image(x_ae, os.path.join(checkpoint_dir, 'break_{}_AE_X.png'.format(n_step)))
-                    saver.restore(sess, os.path.join(conf.load_dir, prev_ckpt))
+                    saver.restore(sess, os.path.join(conf.log_dir, prev_ckpt))
                     logger.critical('Break No :' +str(n_jump)+', Reloaded ckpt: ' + prev_ckpt)
                     continue
 
