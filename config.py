@@ -37,7 +37,7 @@ flags.add_argument('--n_conv_hidden', type=int, default=128,choices=[64, 128],he
 flags.add_argument("--n_epoch", type=int, default=25)
 flags.add_argument("--n_z", type=int, default=64)
 
-flags.add_argument("--n_batch", type=int, default=64)
+flags.add_argument("--n_batch", type=int, default=16)
 flags.add_argument("--n_img_pix", type=int, default=128)
 flags.add_argument("--n_img_out_pix", type=int, default=128)
 flags.add_argument("--n_save_log_step", type=int, default=1)

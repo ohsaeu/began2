@@ -20,7 +20,7 @@ def main():
     else:
         n_channel=3
 
-    n_grid_row = int(np.sqrt(conf.n_batch))
+    n_grid_row = int(np.sqrt(conf.n_batch)) 
     ##========================= DEFINE MODEL ===========================##
     z = tf.random_uniform(
                 (conf.n_batch, conf.n_z), minval=-1.0, maxval=1.0)
@@ -111,7 +111,7 @@ def main():
         shuffle(data_loc)
         data_files.append(data_loc)
         num_data = len(data_loc)
-        data_num.append(num_data)
+        data_num.append(num_data-1)
         total_num += num_data
     
     #sample_seed = np.random.normal(loc=0.0, scale=1.0, size=(conf.sample_size, conf.z_dim)).astype(np.float32)
