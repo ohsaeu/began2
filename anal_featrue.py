@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 from glob import glob
 from random import shuffle
-from model import generate, encode, decode
+from anal_model import generate, getEncodedFeature, decode
 from utils import save_image, get_image
 from config import get_config
 from sklearn.decomposition import PCA
@@ -29,7 +29,7 @@ def main():
     # execute generator
     g_net,_ = generate(z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=False, reuse=False) 
     # execute discriminator
-    e_net,_, _ = encode(g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=False, reuse=False)
+    e_net,_, e_feature = getEncodedFeature(g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=False, reuse=False)
     d_net,_ = decode(e_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel,is_train=False, reuse=False)
    
     g_img=tf.clip_by_value((g_net + 1)*127.5, 0, 255)
@@ -44,49 +44,11 @@ def main():
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
         
-    anal_dir=conf.log_dir+'anal/x_feature_set/'
+    anal_dir=conf.log_dir+'anal/x_feature_layers/18-01-10-21-42/'
     # load and fetch variables
-    '''
-    npz_path =conf.log_dir
-    itr ='222111_'
-    
-    n_neighbors =5
-    anal_dir=conf.log_dir+'anal/g_df/'
-    
-    g_params = np.load( npz_path+itr+'net_g.npz' )['params']
-    d_params = np.load( npz_path+itr+'net_d.npz' )['params']
-    e_params = np.load( npz_path+itr+'net_e.npz' )['params']
-       
-    saver = tf.train.import_meta_graph(npz_path+'began2_model.ckpt.meta')
-    saver.restore(sess, tf.train.latest_checkpoint(npz_path))
-    
-    g_idx=0
-    e_idx=0
-    d_idx=0                
-    for x in tf.trainable_variables():
-        
-        key = x.name.split(':')[0]
-        scope = key.split('/')
-        
-        with tf.variable_scope(scope[0]) as vs1:
-            vs1.reuse_variables()
-            with tf.variable_scope(scope[1]) as vs2:
-                vs2.reuse_variables()
-                ref =tf.get_variable(scope[2], shape=x.shape) 
-                if scope[0]=='generator' and g_idx<len(g_params):
-                    ref1=tf.assign(ref,g_params[g_idx])
-                    sess.run(ref1)
-                    g_idx+=1
-                elif scope[0]=='encoder' and e_idx<len(e_params):
-                    ref1=tf.assign(ref,e_params[e_idx])
-                    sess.run(ref1)
-                    e_idx+=1
-                elif scope[0]=='decoder' and d_idx<len(d_params):
-                    ref1=tf.assign(ref,d_params[d_idx])
-                    sess.run(ref1)
-                    d_idx+=1
-    '''
     saver = tf.train.Saver()
+    
+    
     saver.restore(sess, os.path.join(conf.load_dir, conf.ckpt_nm))
                     
     def manifoldG():
@@ -148,7 +110,7 @@ def main():
     def extractRealFeatrue():
         f_data = glob(os.path.join(conf.data_dir,conf.dataset, "*"))
         n_iters = int(len(f_data)/conf.n_batch)
-        n_idx =1
+        
         for idx in range(0, n_iters):
             f_batch = f_data[idx*conf.n_batch:(idx+1)*conf.n_batch]
             data_batch = [get_image(f, conf.n_img_pix, is_crop=conf.is_crop, resize_w=conf.n_img_out_pix, is_grayscale = conf.is_gray) for f in f_batch]
@@ -158,13 +120,15 @@ def main():
                 s,h,w = img_batch.shape
                 img_batch = img_batch.reshape(s, h, w, n_channel )
                 
-            df_real =sess.run(e_net,feed_dict={g_net:img_batch}) 
+            l_featrue =sess.run(e_feature,feed_dict={g_net:img_batch}) 
             
-            f_df_real = open(anal_dir+ '/x_feature.csv', 'a')
-            for j in range(df_real.shape[0]):
-                f_df_real.write(str(n_idx)+', '+f_batch[j]+ ', '+str(df_real[j].tolist()).replace("[", "").replace("]", "")+ '\n')
-                n_idx+=1
-            f_df_real.close()
+            for i in range(len(l_featrue)):
+                n_idx =0
+                f_df_real = open(checkpoint_dir+ '/'+str(i)+'_x_feature.csv', 'a')
+                for j in range(1, l_featrue[i].shape[0]):
+                    f_df_real.write(str(n_idx)+', '+f_batch[j]+ ', '+str(l_featrue[i][n_idx].tolist()).replace("[", "").replace("]", "")+ '\n')
+                    n_idx+=1
+                f_df_real.close()
     
     def generateGFeatrue():
         n_iters=20
@@ -205,10 +169,11 @@ def main():
         kmeans = KMeans(init='k-means++', n_clusters=n_neighbors, n_init=10)
         kmeans.fit(l_x)
         n_idx=1
-        f_km = open(anal_dir+'/'+str(n_neighbors)+'_AllKmeans.csv','w')
+        f_km = open(anal_dir+'/'+str(n_neighbors)+'_123_AllKmeans.csv','w')
         for i in range(l_x.shape[0]):
             arr = np.concatenate((l_x[i], [kmeans.labels_[i]]))     
-            f_km.write(str(arr[0])+','+ str(arr[1])+ ','+str(arr[2])+','+str(n_idx)  +'\n')
+            f_km.write(str(l_x[i]).replace('[', '').replace(']', '')+','+ str(kmeans.labels_[i])+','+str(n_idx)  +'\n')
+            #f_km.write(str(arr[0])+','+ str(arr[1])+ ','+str(arr[2])+','+str(arr[3])+','+str(n_idx)  +'\n')
             n_idx+=1
         f_km.close()    
         
@@ -240,8 +205,8 @@ def main():
     #manifoldD()
     #extractRealFeatrue()
     #generateGFeatrue()
-    #doKmeans(doPCA(anal_dir+'x_feature.csv',2),8) #+'real_feature.csv'
-    saveClusterImages(8)
+    doKmeans(doPCA(anal_dir+'123_x_feature.csv',16),16) #+'real_feature.csv'
+    #saveClusterImages(8)
        
     sess.close()
 

@@ -15,14 +15,14 @@ def add_argument_group(name):
 
 #flags
 flags = add_argument_group('Flags')
-flags.add_argument("--dataset", type=str, default= "20180103_128_gray_blackremove")
+flags.add_argument("--dataset", type=str, default= "128_gray")
 flags.add_argument("--data_dir", type=str, default="C:/samples/img_download/wheels/data3/img/")
-flags.add_argument("--log_dir", type=str, default="C:/samples/img_download/wheels/data3/output/began2_18-01-05-11-44_gl_jump_20180103/")
-flags.add_argument("--load_dir", type=str, default="C:/samples/img_download/wheels/data3/output/began2_18-01-05-11-44_gl_jump_20180103/")
+flags.add_argument("--log_dir", type=str, default="C:/samples/img_download/wheels/data3/output/began2_18-01-08-16-39_128_gray/")
+flags.add_argument("--load_dir", type=str, default="C:/samples/img_download/wheels/data3/output/began2_18-01-08-16-39_128_gray/")
 flags.add_argument("--curr_time", type=str, default=datetime.datetime.now().strftime("%y-%m-%d-%H-%M"))
 flags.add_argument("--checkpoint_dir", type=str, default= "checkpoint")
 flags.add_argument("--npz_itr", type=str, default= "222111_")
-flags.add_argument("--ckpt_nm", type=str, default= "final_began2_model.ckpt")
+flags.add_argument("--ckpt_nm", type=str, default= "69_286081_began2_model.ckpt")
 flags.add_argument("--load_target", type=str, default= "G")
 
 flags.add_argument('--gamma', type=float, default=0.7)

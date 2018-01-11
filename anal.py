@@ -45,46 +45,7 @@ def main():
     #saver.restore(sess, tf.train.latest_checkpoint(npz_path))
     saver = tf.train.Saver()
     saver.restore(sess, os.path.join(conf.load_dir, conf.ckpt_nm))
-    '''
-    # load and fetch variables
-    npz_path =conf.log_dir
-    itr ='222111_'
     
-    g_params = np.load( npz_path+itr+'net_g.npz' )['params']
-    d_params = np.load( npz_path+itr+'net_d.npz' )['params']
-    e_params = np.load( npz_path+itr+'net_e.npz' )['params']
-       
-    
-    
-    #col = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-    
-    g_idx=0
-    e_idx=0
-    d_idx=0                
-    for x in tf.trainable_variables():
-        
-        key = x.name.split(':')[0]
-        scope = key.split('/')
-        
-        with tf.variable_scope(scope[0]) as vs1:
-            vs1.reuse_variables()
-            with tf.variable_scope(scope[1]) as vs2:
-                vs2.reuse_variables()
-                ref =tf.get_variable(scope[2], shape=x.shape) 
-                if scope[0]=='generator' and g_idx<len(g_params):
-                    ref1=tf.assign(ref,g_params[g_idx])
-                    sess.run(ref1)
-                    g_idx+=1
-                elif scope[0]=='encoder' and e_idx<len(e_params):
-                    ref1=tf.assign(ref,e_params[e_idx])
-                    sess.run(ref1)
-                    e_idx+=1
-                elif scope[0]=='decoder' and d_idx<len(d_params):
-                    ref1=tf.assign(ref,d_params[d_idx])
-                    sess.run(ref1)
-                    d_idx+=1
-                    
-    '''
     #load real image 
     data_files = glob(os.path.join(conf.data_dir,conf.dataset, "*"))
     shuffle(data_files)
