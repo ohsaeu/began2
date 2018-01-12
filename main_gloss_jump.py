@@ -153,7 +153,7 @@ def main():
             if((epoch > conf.skip_epoch) and ((gloss > prev_gloss*conf.skip_ratio) or (dloss > prev_dloss*conf.skip_ratio))):
                 n_jump+=1
                 logger.critical(str(n_jump)+', skip this iteration ----  Epoch: '+str(epoch)+ ", itr: "+str(idx)+", d_loss: "+str(dloss)+", g_loss:"+ str(gloss)+ "\n")
-                
+                logger.critical(str(n_jump)+', skip this iteration ----  Epoch: '+str(epoch)+ ", itr: "+str(idx)+", prev_d_loss: "+str(prev_dloss)+", prev_g_loss:"+ str(prev_gloss)+ "\n")
                 if(n_jump>20):
                     break
                 else:
@@ -164,6 +164,7 @@ def main():
                     save_image(x_img, os.path.join(checkpoint_dir, 'break_{}_X.png'.format(n_step)))
                     saver.restore(sess, os.path.join(checkpoint_dir, prev_ckpt))
                     logger.critical('Break No :' +str(n_jump)+', Reloaded ckpt: ' + prev_ckpt)
+                    n_step+=1
                     continue
 
             if n_step % conf.n_save_log_step == 0:

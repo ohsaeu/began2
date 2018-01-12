@@ -51,28 +51,7 @@ def generateLatent(z, n_img_pix, n_conv_hidden, n_channel,  is_train=False, reus
     g_vars = tf.contrib.framework.get_variables(gen)
     return out, g_vars,x
 
-
 def encode(x, n_z, n_img_pix, n_conv_hidden, is_train=True, reuse=False):
-    
-    n_repeat = int(np.log2(n_img_pix)) - 2
-    
-    with tf.variable_scope("encoder", reuse=reuse) as enc:
-        x = layers.conv2d(x, n_conv_hidden, 3, 1, activation_fn=tf.nn.elu)
-        
-        for idx in range(n_repeat):
-            n_channel = n_repeat * (idx + 1)
-            x = layers.conv2d(x, n_channel, 3, 1, activation_fn=tf.nn.elu)
-            x = layers.conv2d(x, n_channel, 3, 1, activation_fn=tf.nn.elu)
-            if idx < n_repeat - 1:
-                x = layers.conv2d(x, n_channel, 3, 2, activation_fn=tf.nn.elu)
-
-        x = tf.reshape(x, [-1, np.prod([8, 8, n_channel])])
-        out = layers.fully_connected(x, n_z, activation_fn=None)
-        #logits = tf.nn.sigmoid(out)
-    e_vars = tf.contrib.framework.get_variables(enc)
-    return out, e_vars ,x  
-
-def getEncodedFeature(x, n_z, n_img_pix, n_conv_hidden, is_train=True, reuse=False):
     
     n_repeat = int(np.log2(n_img_pix)) - 2
     l_featrue = list()
