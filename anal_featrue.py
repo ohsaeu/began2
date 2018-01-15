@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 from glob import glob
 from random import shuffle
-from anal_model import generate, getEncodedFeature, decode
+from anal_model import generate, encode, decode
 from utils import save_image, get_image
 from config import get_config
 from sklearn.decomposition import PCA
@@ -29,7 +29,7 @@ def main():
     # execute generator
     g_net,_ = generate(z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=False, reuse=False) 
     # execute discriminator
-    e_net,_, e_feature = getEncodedFeature(g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=False, reuse=False)
+    e_net,_, e_feature = encode(g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=False, reuse=False)
     d_net,_ = decode(e_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel,is_train=False, reuse=False)
    
     g_img=tf.clip_by_value((g_net + 1)*127.5, 0, 255)
@@ -87,7 +87,22 @@ def main():
         g_mnfd= np.asarray(g_mnfd)    
         g_intp =sess.run(g_img,feed_dict={z:g_mnfd})
         save_image(g_intp, os.path.join(checkpoint_dir, str(idx)+'_detail_mnfd_anal_G.png'))
-                   
+        
+    def loadGTemp(f_in):
+        n_itr = 0
+        l_z = list()
+        with open(f_in,'r') as file:    
+            for line in file:
+               l_z.append(np.fromstring(line, dtype=float, sep=','))
+               n_itr +=1
+               if(n_itr>63):
+                   break
+        file.close() 
+        
+        l_z = np.asarray(l_z)
+        g_intp =sess.run(g_img,feed_dict={z:l_z})
+        save_image(g_intp, os.path.join(checkpoint_dir, 'test_G.png'))
+                         
     def manifoldD():
         f_data = glob(os.path.join(conf.data_dir,conf.dataset, "*"))
         shuffle(f_data)
@@ -205,8 +220,9 @@ def main():
     #manifoldD()
     #extractRealFeatrue()
     #generateGFeatrue()
-    doKmeans(doPCA(anal_dir+'123_x_feature.csv',16),16) #+'real_feature.csv'
+    #doKmeans(doPCA(anal_dir+'123_x_feature.csv',16),16) #+'real_feature.csv'
     #saveClusterImages(8)
+    loadGTemp('C:/samples/test/test.csv')
        
     sess.close()
 
