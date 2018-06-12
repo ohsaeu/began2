@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 from glob import glob
 from random import shuffle
-from anal_model import generate, encode, decode
+from anal_model import generate, encodeAE, decode,encode
 from utils import save_image, get_image
 from config import get_config
 from sklearn.decomposition import PCA
@@ -29,10 +29,14 @@ def main():
     # execute generator
     g_net,_ = generate(z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=False, reuse=False) 
     # execute discriminator
+    #g_net = tf.zeros([conf.n_batch, conf.n_img_out_pix, conf.n_img_out_pix,1], tf.float32)
     e_net,_, e_feature = encode(g_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, is_train=False, reuse=False)
     d_net,_ = decode(e_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel,is_train=False, reuse=False)
+    
+    d_g_net, _ = decode(e_net, conf.n_z, conf.n_img_out_pix, conf.n_conv_hidden, n_channel, is_train=False, reuse=True)
    
     g_img=tf.clip_by_value((g_net + 1)*127.5, 0, 255)
+    d_g_img=tf.clip_by_value((d_g_net + 1)*127.5, 0, 255)
     d_img=tf.clip_by_value((d_net + 1)*127.5, 0, 255)
     # start session
     sess = tf.InteractiveSession()
@@ -95,13 +99,21 @@ def main():
             for line in file:
                l_z.append(np.fromstring(line, dtype=float, sep=','))
                n_itr +=1
-               if(n_itr>63):
-                   break
+               if(n_itr % 64 ==0 ):
+                    l_this = np.asarray(l_z)
+                    g,_ =sess.run([g_img,d_g_img],feed_dict={z:l_this})
+                    save_image(g, os.path.join(checkpoint_dir, 'form_'+str(n_itr)+'_train_G.png'))
+                    l_z.clear()
+               if(n_itr==4000):
+                   l_last = np.ones((conf.n_batch, conf.n_z), dtype=float)
+                   l_temp = np.asarray(l_z)
+                   for i in range(len(l_temp)):
+                       l_last[i] = l_temp[i]
+                   g,_ =sess.run([g_img,d_g_img],feed_dict={z:l_last})
+                   save_image(g, os.path.join(checkpoint_dir, 'form_'+str(n_itr)+'_train_G.png'))
+                   pass
         file.close() 
-        
-        l_z = np.asarray(l_z)
-        g_intp =sess.run(g_img,feed_dict={z:l_z})
-        save_image(g_intp, os.path.join(checkpoint_dir, 'test_G.png'))
+
                          
     def manifoldD():
         f_data = glob(os.path.join(conf.data_dir,conf.dataset, "*"))
@@ -222,7 +234,7 @@ def main():
     #generateGFeatrue()
     #doKmeans(doPCA(anal_dir+'123_x_feature.csv',16),16) #+'real_feature.csv'
     #saveClusterImages(8)
-    loadGTemp('C:/samples/test/test.csv')
+    loadGTemp('C:/samples/survey_data/train.csv')
        
     sess.close()
 

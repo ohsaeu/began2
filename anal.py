@@ -68,7 +68,7 @@ def main():
         f_g = open(checkpoint_dir+ '/g_img.csv', 'a')
         
         # generate images from generator and ae
-        for i in range(10):
+        for i in range(5):
             z_test =np.random.uniform(low=-1, high=1, size=(conf.n_batch, 64)).astype(np.float32)
             g_im =sess.run(g_img,feed_dict={z:z_test})  
             save_images(g_im, [n_grid_row,n_grid_row],os.path.join(checkpoint_dir, str(i)+'_anal_G.png'))
